@@ -77,15 +77,14 @@ export default function Produits() {
                     
                     {/* 2. LE BOUTON EST DÉSORMAIS BIEN DANS LA BOUCLE .MAP */}
                     <button
-                      onClick={() => {
-                        addToCart(product);
-                        alert(`${product.name} ajouté au panier !`);
-                      }}
-                      className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm"
-                    >
-                      <ShoppingCart size={18} />
-                      Ajouter au panier
-                    </button>
+  onClick={() => {
+    addToCart(product);
+  }}
+  className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm"
+>
+  <ShoppingCart size={18} />
+  Ajouter au panier
+</button> 
                   </div>
                 </div>
               ))}
