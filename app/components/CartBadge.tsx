@@ -1,24 +1,24 @@
 "use client";
-import { useCart } from '../context/CartContext';
-import { ShoppingCart } from 'lucide-react';
-import Link from 'next/link';
+
+import { useCart } from "@/app/context/CartContext";
+import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
 
 export default function CartBadge() {
   const { cart } = useCart();
-  
-  // On calcule le nombre total d'articles (somme des quantités)
-  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  // On utilise || 0 pour s'assurer que si le panier est vide, on affiche 0
+  // On utilise item.quantity || 1 pour corriger l'erreur TypeScript "possibly undefined"
+  const totalItems = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
   return (
-    <Link href="/panier" className="fixed top-20 right-6 z-50 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition-transform transform hover:scale-110">
-      <div className="relative">
-        <ShoppingCart size={24} />
-        {totalItems > 0 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full border-2 border-white animate-in zoom-in duration-300">
-            {totalItems}
-          </span>
-        )}
-      </div>
+    <Link href="/panier" className="relative p-2 hover:bg-gray-100 rounded-full transition-colors">
+      <ShoppingCart size={24} className="text-gray-700" />
+      {totalItems > 0 && (
+        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white">
+          {totalItems}
+        </span>
+      )}
     </Link>
   );
 }
