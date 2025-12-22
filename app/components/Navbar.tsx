@@ -13,7 +13,7 @@ export default function Navbar() {
           </div>
           <div className="hidden md:flex items-center gap-4">
             <Link href="/" className="text-gray-700 hover:text-gray-900 font-medium">Accueil</Link>
-            <Link href="/produits" className="text-gray-700 hover:text-gray-900 font-medium">Boutique</Link>
+            <Link href="/produits" className="bg-blue-600 text-white px-3 py-1 rounded-md font-semibold hover:bg-blue-700">Shop</Link>
             <Link href="/about" className="text-gray-700 hover:text-gray-900 font-medium">À Propos</Link>
             <Link href="/restrictions" className="text-gray-700 hover:text-red-600 font-medium">Produits Interdits</Link>
             <a href="#" className="text-gray-700 hover:text-gray-900 font-medium">Tarifs</a>

@@ -143,28 +143,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Product Search (centered in hero) */}
-          <div className="mt-6 flex justify-center">
-            <div className="w-full max-w-2xl px-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white" size={20} />
-                <input
-                  type="text"
-                  aria-label="Rechercher des produits"
-                  placeholder="Rechercher un produit ou un service..."
-                  value={productQuery}
-                  onChange={(e) => setProductQuery(e.target.value)}
-                  className="w-full pl-12 pr-40 py-3 rounded-full shadow-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                />
-                <button
-                  onClick={() => { /* optionally trigger something */ }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-900 text-white px-4 py-2 rounded-full shadow hover:bg-blue-800 font-semibold"
-                >
-                  Rechercher
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Hero focused on shipping service (search removed from Home) */}
 
           {/* Tracking Bar */}
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
@@ -208,24 +187,13 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {products.map((product) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {allProducts.slice(0, 4).map((product) => (
               <div
                 key={product.id}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col"
               >
-                <div className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden">
-                  {/* Product badges (TOP VENTE / DISPONIBLE) */}
-                  {product.id === 6 && (
-                    <div className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
-                      TOP VENTE
-                    </div>
-                  )}
-                  {product.id === 8 && (
-                    <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
-                      DISPONIBLE
-                    </div>
-                  )}
+                <div className="relative h-40 sm:h-44 bg-gray-100 overflow-hidden">
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -233,32 +201,17 @@ export default function Home() {
                     className="object-cover hover:scale-110 transition-transform duration-300"
                   />
                 </div>
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                <div className="p-4 flex flex-col flex-grow">
+                  <h3 className="text-md font-semibold text-gray-900 mb-3">
                     {product.name}
                   </h3>
                   <button
                     onClick={() => handleBuyProduct(product.name)}
-                    className="mt-auto bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 active:scale-95"
+                    className="mt-auto bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                   >
-                    <ShoppingCart size={18} />
-                    Acheter maintenant
+                    <ShoppingCart size={16} />
+                    Acheter
                   </button>
-                  {/* Trust badges under the buy button */}
-                  <div className="mt-3 flex items-center justify-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-600">✅</span>
-                      <span>Produit Vérifié</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Truck size={16} className="text-gray-500" />
-                      <span>Suivi Sécurisé</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-gray-500" />
-                      <span>Retrait à Champin</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             ))}
@@ -267,10 +220,9 @@ export default function Home() {
           <div className="text-center">
             <Link
               href="/produits"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 sm:px-12 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold text-base transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              Voir tous nos produits
-              <ChevronRight size={24} />
+              See All Products
             </Link>
           </div>
         </div>
