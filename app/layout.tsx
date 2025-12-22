@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Up-to-Date Store | Boutique & Shipping au Cap-Haïtien",
+  title: "Up-to-Date Store",
   description: "Vente de produits électroniques et service de shipping rapide vers Haïti.",
   icons: {
     icon: '/UPTODATE%20logo.jpg',
