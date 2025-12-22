@@ -55,19 +55,10 @@ export default function RootLayout({
             </svg>
           </a>
         </div>
-        <CartBadge /> 
+        
         </CartProvider>
         {/* Icône Panier Flottante */}
-<Link href="/panier" className="fixed top-20 right-6 z-50 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition-transform transform hover:scale-110">
-  <div className="relative">
-    <ShoppingCart size={24} />
-    {/* Badge rouge avec le nombre d'articles */}
-    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full border-2 border-white">
-      {/* Ici on affichera le nombre total d'articles */}
-      0 
-    </span>
-  </div>
-</Link>
+
       </body>
     </html>
   );
