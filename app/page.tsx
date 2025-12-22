@@ -205,11 +205,8 @@ const { addToCart } = useCart();
                   <h3 className="text-md font-semibold text-gray-900 mb-3">
                     {product.name}
                   </h3>
-                 <button
-  onClick={() => {
-    addToCart(product);
-    alert(`${product.name} ajouté au panier !`); // Pour confirmer le clic
-  }}
+               <button
+  onClick={() => addToCart(product)}
   className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
 >
   <ShoppingCart size={16} />
