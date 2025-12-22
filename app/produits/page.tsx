@@ -5,19 +5,18 @@ import Image from "next/image";
 import { ShoppingCart, MessageCircle, Search } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { products } from "@/app/data/products";
+import { useCart } from '../context/CartContext'; // Import correct
 
 export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // 1. ON PLACE LE HOOK ICI (à l'intérieur de la fonction)
+  const { addToCart } = useCart();
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleBuyProduct = (productName: string) => {
-    const message = `Bonjour Up-to-date Store, je suis intéressé par le ${productName}. Est-il disponible ?`;
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/50932836938?text=${encodedMessage}`, "_blank");
-  };
   return (
     <div className="min-h-screen bg-white">
       <style>{`
@@ -28,7 +27,6 @@ export default function Produits() {
 
       <Navbar />
 
-      {/* Featured Products Section */}
       <section className="py-16 sm:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -48,10 +46,10 @@ export default function Produits() {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
-                  placeholder="Rechercher un produit (ex: Smart, USB, LED)..."
+                  placeholder="Rechercher un produit..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all text-gray-900 placeholder-gray-500"
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-900"
                 />
               </div>
             </div>
@@ -66,22 +64,27 @@ export default function Produits() {
                 >
                   <div className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden">
                     <Image
-                      src={product.image}
+                      src={product.image || "/UPTODATE%20logo.jpg"}
                       alt={product.name}
                       fill
                       className="object-cover hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  <div className="p-6 flex flex-col flex-grow">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  <div className="p-4 sm:p-6 flex flex-col flex-grow">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-4 line-clamp-2">
                       {product.name}
                     </h3>
+                    
+                    {/* 2. LE BOUTON EST DÉSORMAIS BIEN DANS LA BOUCLE .MAP */}
                     <button
-                      onClick={() => handleBuyProduct(product.name)}
-                      className="mt-auto bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 active:scale-95"
+                      onClick={() => {
+                        addToCart(product);
+                        alert(`${product.name} ajouté au panier !`);
+                      }}
+                      className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 active:scale-95 text-sm"
                     >
                       <ShoppingCart size={18} />
-                      Commander
+                      Ajouter au panier
                     </button>
                   </div>
                 </div>
@@ -91,30 +94,16 @@ export default function Produits() {
             <div className="text-center py-12">
               <ShoppingCart className="mx-auto text-gray-400 mb-4" size={48} />
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun produit trouvé</h3>
-              <p className="text-gray-600 mb-6">
-                Nous n'avons pas trouvé de produits correspondant à "{searchQuery}". Essayez une autre recherche.
-              </p>
               <button
                 onClick={() => setSearchQuery("")}
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold"
               >
-                Réinitialiser la recherche
+                Réinitialiser
               </button>
             </div>
           )}
         </div>
       </section>
-
-      {/* Floating WhatsApp Button */}
-      <a
-        href="https://wa.me/50932836938"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center"
-        title="Contact us on WhatsApp"
-      >
-        <MessageCircle size={28} />
-      </a>
     </div>
   );
 }
