@@ -1,5 +1,5 @@
 "use client";
-
+import { useCart } from './context/CartContext';
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -81,7 +81,7 @@ export default function Home() {
   const products = allProducts.filter((p) =>
     p.name.toLowerCase().includes(productQuery.toLowerCase())
   );
-
+const { addToCart } = useCart();
   return (
     <div className="min-h-screen bg-white">
       {/* Hide Next.js badge */}
@@ -206,9 +206,10 @@ export default function Home() {
                     {product.name}
                   </h3>
                   <button
-                    onClick={() => handleBuyProduct(product.name)}
-                    className="mt-auto bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                  >
+                    onClick={() => addToCart(product)} 
+                    className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+>
+  
                     <ShoppingCart size={16} />
                     Acheter
                   </button>
