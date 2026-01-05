@@ -39,7 +39,7 @@ export default function Home() {
     if (!weight) return "0,00 $";
     const weightNum = parseFloat(weight);
     const perPoundRate = 5; // Cap-Haïtien only
-    const total = 10 + weightNum * perPoundRate;
+    const total = 8 + weightNum * perPoundRate;
     return `${total.toFixed(2)} $`;
   };
 
@@ -374,7 +374,7 @@ const { addToCart } = useCart();
                 </div>
 
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-600 mb-2">Frais de service : 10,00 $</p>
+                  <p className="text-sm text-gray-600 mb-2">Frais de service : 8,00 $</p>
                   <p className="text-sm text-gray-600 mb-4">
                     Tarif:{" "}
                     <span className="font-semibold text-gray-900">
