@@ -5,6 +5,7 @@ import { CartProvider } from './context/CartContext'; // Importe le nouveau fich
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import CartBadge from './components/CartBadge';
+import { Analytics } from "@vercel/analytics/react";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -41,6 +42,7 @@ export default function RootLayout({
 
         <div className="pt-4">
           {children}
+          <Analytics />
 
           {/* Floating WhatsApp Button (site-wide) */}
           <a
