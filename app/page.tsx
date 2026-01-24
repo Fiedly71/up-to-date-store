@@ -400,31 +400,31 @@ const { addToCart } = useCart();
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="p-4 border border-gray-200 rounded-xl bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Nom / Boutique</p>
-                <p className="text-lg font-bold text-gray-900">UPTODATE Store</p>
-                <p className="text-sm text-gray-600">Le nom qui doit apparaître dans le champ « Nom complet ».</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Nom et Prénom</p>
+                <p className="text-lg font-bold text-gray-900">Votre nom et prénom</p>
+                <p className="text-sm text-gray-600">Mettez uniquement votre nom et prénom (pas de nom de boutique).</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-xl bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Numéro de téléphone</p>
-                <p className="text-lg font-bold text-gray-900">+509 32 83 69 38</p>
-                <p className="text-sm text-gray-600">Numéro que l'équipe du marketplace utilisera pour confirmer la commande.</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Numéro de téléphone (USA)</p>
+                <p className="text-lg font-bold text-gray-900">Numéro des USA (obligatoire)</p>
+                <p className="text-sm text-gray-600">Utilisez un numéro US valide pour la confirmation de commande.</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-xl bg-white md:col-span-2">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase mb-2">
                   <MapPin size={16} />
                   Adresse de livraison
                 </div>
-                <p className="text-lg font-bold text-gray-900">23, Rue 5, Delmas</p>
-                <p className="text-sm text-gray-600">Indiquez cette adresse dans le champ « Adresse complète » pour que la livraison nous parvienne directement.</p>
+                <p className="text-lg font-bold text-gray-900">8020 Northwest 66th Street, Miami, FL 33166</p>
+                <p className="text-sm text-gray-600">Renseignez cette adresse dans le champ « Address line » du marketplace.</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-xl bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Instruction</p>
-                <p className="text-lg font-bold text-gray-900">Livraison standard / bureau</p>
-                <p className="text-sm text-gray-600">Choisissez la livraison standard et précisez « bureau UPTODATE » si un champ commentaire est disponible.</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Appartement / Code (IMPORTANT)</p>
+                <p className="text-lg font-bold text-gray-900">BP-136835</p>
+                <p className="text-sm text-gray-600">Entrez ce code dans le champ « Apartment / Apt » (obligatoire).</p>
               </div>
-              <div className="p-4 border border-blue-200 rounded-xl bg-blue-50">
+              <div className="p-4 border border-blue-200 rounded-xl bg-blue-50 md:col-span-2">
                 <p className="text-sm font-semibold text-blue-700 mb-1">Rappel rapide</p>
-                <p className="text-sm text-blue-800">Ajoutez vos articles au panier, copiez ces informations, puis finalisez la commande sur le marketplace. En cas de doute, envoyez-nous une capture d'écran sur WhatsApp.</p>
+                <p className="text-sm text-blue-800">Ajoutez vos articles au panier, copiez ces informations (adresse + code BP-136835), puis finalisez la commande sur le marketplace. En cas de doute, envoyez-nous une capture d'écran sur WhatsApp.</p>
               </div>
             </div>
           </div>
@@ -547,6 +547,11 @@ const { addToCart } = useCart();
                   8020 Northwest 66th Street
                 </p>
                 <p className="text-2xl font-semibold">Miami, FL 33166</p>
+                <div className="mt-4 p-4 rounded-lg bg-white/10 border border-white/20">
+                  <p className="text-white font-semibold">IMPORTANT : Appartement / Code</p>
+                  <p className="text-yellow-300 text-lg font-bold">BP-136835</p>
+                  <p className="text-blue-100 text-sm">Renseignez ce code dans le champ « Apartment / Apt » lorsque vous expédiez vers l'entrepôt.</p>
+                </div>
                 <p className="text-blue-100 mt-4">
                   Ouvert lundi - vendredi : 8h00 - 18h00 EST
                 </p>
