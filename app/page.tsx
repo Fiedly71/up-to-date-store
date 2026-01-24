@@ -1,6 +1,6 @@
 "use client";
 import { useCart } from '@/app/context/CartContext';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -36,6 +36,20 @@ export default function Home() {
   const [productQuery, setProductQuery] = useState("");
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
+  
+  // Persistance des quantités sélectionnées sur la page d'accueil
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("selected-quantities-home");
+      if (saved) setProductQuantities(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("selected-quantities-home", JSON.stringify(productQuantities));
+    } catch {}
+  }, [productQuantities]);
 
   const calculatePrice = () => {
     if (!weight) return "0,00 $";
@@ -234,14 +248,33 @@ const { addToCart } = useCart();
                   </h3>
                   <div className="mb-3">
                     <label className="block text-xs font-semibold text-gray-600 mb-2">Quantité</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={productQuantities[product.id] || 1}
-                      onChange={(e) => setProductQuantities({...productQuantities, [product.id]: parseInt(e.target.value) || 1})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          const current = productQuantities[product.id] || 1;
+                          const next = Math.max(1, current - 1);
+                          setProductQuantities({ ...productQuantities, [product.id]: next });
+                        }}
+                      >
+                        -
+                      </button>
+                      <div className="px-4 py-2 border border-gray-300 rounded-lg min-w-12 text-center font-semibold text-gray-900">
+                        {productQuantities[product.id] || 1}
+                      </div>
+                      <button
+                        type="button"
+                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          const current = productQuantities[product.id] || 1;
+                          const next = Math.min(99, current + 1);
+                          setProductQuantities({ ...productQuantities, [product.id]: next });
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => {
@@ -418,9 +451,9 @@ const { addToCart } = useCart();
                 <p className="text-sm text-gray-600">Renseignez cette adresse dans le champ « Address line » du marketplace.</p>
               </div>
               <div className="p-4 border border-gray-200 rounded-xl bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Appartement / Code (IMPORTANT)</p>
+                <p className="text-xs font-semibold text-red-600 uppercase mb-2">Appartement / Code (IMPORTANT)</p>
                 <p className="text-lg font-bold text-red-600">BP-136835</p>
-                <p className="text-sm text-gray-600">Entrez ce code dans le champ « Apartment / Apt » (obligatoire).</p>
+                <p className="text-sm text-red-600">Entrez ce code dans le champ « Apartment / Apt » (obligatoire).</p>
               </div>
               <div className="p-4 border border-blue-200 rounded-xl bg-blue-50 md:col-span-2">
                 <p className="text-sm font-semibold text-blue-700 mb-1">Rappel rapide</p>
@@ -812,12 +845,19 @@ const { addToCart } = useCart();
                   </Link>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Tarifs
-                  </a>
+                  <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                    Vie Privée
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors">
+                    Cookies
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+                    Conditions
+                  </Link>
                 </li>
               </ul>
             </div>

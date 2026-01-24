@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShoppingCart, Instagram } from "lucide-react";
 import CartBadge from './components/CartBadge';
 import { Analytics } from "@vercel/analytics/react";
+import CookieConsent from "@/app/components/CookieConsent";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -43,6 +44,7 @@ export default function RootLayout({
         <div className="pt-4">
           {children}
           <Analytics />
+          <CookieConsent />
 
           {/* Floating Instagram Button (site-wide) */}
           <a
