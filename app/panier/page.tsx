@@ -122,86 +122,87 @@ export default function PanierPage() {
               </div>
 
               <div className="grid lg:grid-cols-3 gap-8">
-              {/* Cart Items */}
-              <div className="lg:col-span-2 space-y-4">
-                {cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="premium-card rounded-2xl p-6 flex flex-col sm:flex-row gap-6 group hover:scale-[1.02] transition-all duration-300"
-                  >
-                    {/* Product Image */}
-                    <div className="relative w-full sm:w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0">
-                      <Image
-                        src={item.image || '/UPTODATE%20logo.jpg'}
-                        alt={item.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
+                {/* Cart Items */}
+                <div className="lg:col-span-2 space-y-4">
+                  {cart.map((item) => (
+                    <div
+                      key={item.id}
+                      className="premium-card rounded-2xl p-6 flex flex-col sm:flex-row gap-6 group hover:scale-[1.02] transition-all duration-300"
+                    >
+                      {/* Product Image */}
+                      <div className="relative w-full sm:w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+                        <Image
+                          src={item.image || '/UPTODATE%20logo.jpg'}
+                          alt={item.name}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+
+                      {/* Product Info */}
+                      <div className="flex-grow flex flex-col justify-between">
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all">
+                            {item.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">Quantité: {item.quantity || 1}</p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3 mt-4">
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="flex items-center gap-2 text-red-600 hover:text-white hover:bg-red-600 px-4 py-2 rounded-xl font-semibold transition-all duration-300 border-2 border-red-600"
+                          >
+                            <Trash2 size={18} />
+                            <span className="hidden sm:inline">Retirer</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Summary Card */}
+                <div className="lg:col-span-1">
+                  <div className="premium-card rounded-2xl p-8 sticky top-24">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Résumé</h2>
+                    
+                    <div className="space-y-4 mb-6">
+                      <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+                        <span className="text-gray-600">Total d'articles</span>
+                        <span className="text-xl font-bold text-gray-900">{total}</span>
+                      </div>
                     </div>
 
-                    {/* Product Info */}
-                    <div className="flex-grow flex flex-col justify-between">
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all">
-                          {item.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">Quantité: {item.quantity || 1}</p>
-                      </div>
+                    <div className="space-y-3">
+                      <a
+                        href="https://wa.me/50932836938?text=Bonjour, je voudrais commander les produits de mon panier"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="premium-button w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                      >
+                        Commander sur WhatsApp
+                        <ArrowRight size={20} />
+                      </a>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-3 mt-4">
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="flex items-center gap-2 text-red-600 hover:text-white hover:bg-red-600 px-4 py-2 rounded-xl font-semibold transition-all duration-300 border-2 border-red-600"
-                        >
-                          <Trash2 size={18} />
-                          <span className="hidden sm:inline">Retirer</span>
-                        </button>
-                      </div>
+                      <Link
+                        href="/produits"
+                        className="block text-center text-gray-700 hover:text-purple-600 font-semibold py-3 transition-colors duration-300"
+                      >
+                        Continuer mes achats
+                      </Link>
+                    </div>
+
+                    {/* Info Box */}
+                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        <span className="font-bold text-blue-600">💡 Astuce:</span> Contactez-nous sur WhatsApp pour obtenir un devis personnalisé et discuter des modalités de livraison.
+                      </p>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-
-              {/* Summary Card */}
-              <div className="lg:col-span-1">
-                <div className="premium-card rounded-2xl p-8 sticky top-24">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Résumé</h2>
-                  
-                  <div className="space-y-4 mb-6">
-                    <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-                      <span className="text-gray-600">Total d'articles</span>
-                      <span className="text-xl font-bold text-gray-900">{total}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <a
-                      href="https://wa.me/50932836938?text=Bonjour, je voudrais commander les produits de mon panier"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="premium-button w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-                    >
-                      Commander sur WhatsApp
-                      <ArrowRight size={20} />
-                    </a>
-
-                    <Link
-                      href="/produits"
-                      className="block text-center text-gray-700 hover:text-purple-600 font-semibold py-3 transition-colors duration-300"
-                    >
-                      Continuer mes achats
-                    </Link>
-                  </div>
-
-                  {/* Info Box */}
-                  <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-                    <p className="text-sm text-gray-700 leading-relaxed">
-                      <span className="font-bold text-blue-600">💡 Astuce:</span> Contactez-nous sur WhatsApp pour obtenir un devis personnalisé et discuter des modalités de livraison.
-                    </p>
-                  </div>
-                </div>
-                </div>
             </div>
           )}
         </div>
