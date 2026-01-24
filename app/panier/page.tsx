@@ -3,7 +3,7 @@
 import { useCart } from '../context/CartContext';
 import Navbar from '@/app/components/Navbar';
 import Image from 'next/image';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Package, Sparkles } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowRight, Package, Sparkles, MapPin, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PanierPage() {
@@ -77,7 +77,51 @@ export default function PanierPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="space-y-8">
+              {/* Adresse de commande (exemple) */}
+              <div className="premium-card rounded-2xl p-8 shadow-xl bg-white/70 backdrop-blur">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                    <ClipboardList size={22} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Guide express</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Comment remplir l'adresse sur le marketplace</h2>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 border border-gray-200 rounded-xl bg-white">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Nom / Boutique</p>
+                    <p className="text-lg font-bold text-gray-900">UPTODATE Store</p>
+                    <p className="text-sm text-gray-600">Le nom qui doit apparaître dans le champ « Nom complet ».</p>
+                  </div>
+                  <div className="p-4 border border-gray-200 rounded-xl bg-white">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Numéro de téléphone</p>
+                    <p className="text-lg font-bold text-gray-900">+509 32 83 69 38</p>
+                    <p className="text-sm text-gray-600">Numéro que l'équipe du marketplace utilisera pour confirmer la commande.</p>
+                  </div>
+                  <div className="p-4 border border-gray-200 rounded-xl bg-white md:col-span-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase mb-2">
+                      <MapPin size={16} />
+                      Adresse de livraison
+                    </div>
+                    <p className="text-lg font-bold text-gray-900">23, Rue 5, Delmas</p>
+                    <p className="text-sm text-gray-600">Indiquez cette adresse dans le champ « Adresse complète » pour que la livraison nous parvienne directement.</p>
+                  </div>
+                  <div className="p-4 border border-gray-200 rounded-xl bg-white">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Instruction</p>
+                    <p className="text-lg font-bold text-gray-900">Livraison standard / bureau</p>
+                    <p className="text-sm text-gray-600">Choisissez la livraison standard et précisez « bureau UPTODATE » si un champ commentaire est disponible.</p>
+                  </div>
+                  <div className="p-4 border border-blue-200 rounded-xl bg-blue-50">
+                    <p className="text-sm font-semibold text-blue-700 mb-1">Rappel rapide</p>
+                    <p className="text-sm text-blue-800">Ajoutez vos articles au panier, copiez ces informations, puis finalisez la commande sur le marketplace. En cas de doute, envoyez-nous une capture d'écran sur WhatsApp.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid lg:grid-cols-3 gap-8">
               {/* Cart Items */}
               <div className="lg:col-span-2 space-y-4">
                 {cart.map((item) => (
@@ -157,7 +201,7 @@ export default function PanierPage() {
                     </p>
                   </div>
                 </div>
-              </div>
+                </div>
             </div>
           )}
         </div>

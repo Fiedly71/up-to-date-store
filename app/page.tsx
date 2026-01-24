@@ -802,6 +802,17 @@ const { addToCart } = useCart();
               <p className="mt-2">
                 Conçu avec passion pour servir la communauté de Cap-Haïtien
               </p>
+              <p className="mt-2">
+                Site réalisé par{' '}
+                <a
+                  href="https://gui-fiedly.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-200 font-semibold"
+                >
+                  GF Digital Studio
+                </a>
+              </p>
             </div>
           </div>
         </div>
