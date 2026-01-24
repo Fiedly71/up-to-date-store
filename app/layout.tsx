@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from './context/CartContext'; // Importe le nouveau fichier
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Instagram } from "lucide-react";
 import CartBadge from './components/CartBadge';
 import { Analytics } from "@vercel/analytics/react";
 const geistSans = Geist({
@@ -44,17 +44,15 @@ export default function RootLayout({
           {children}
           <Analytics />
 
-          {/* Floating WhatsApp Button (site-wide) */}
+          {/* Floating Instagram Button (site-wide) */}
           <a
-            href="https://wa.me/50932836938"
+            href="https://instagram.com/"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="WhatsApp"
-            className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-transform transform hover:scale-110 flex items-center justify-center"
+            aria-label="Instagram"
+            className="fixed bottom-6 right-6 z-50 bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-full shadow-lg transition-transform transform hover:scale-110 flex items-center justify-center"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="feather feather-message-circle">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.2 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-4.7A8.38 8.38 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.5 8.5 0 0 1 21 11.5z"></path>
-            </svg>
+            <Instagram size={22} />
           </a>
         </div>
         

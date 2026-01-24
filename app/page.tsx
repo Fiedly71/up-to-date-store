@@ -249,7 +249,7 @@ const { addToCart } = useCart();
                       for (let i = 0; i < quantity; i++) {
                         addToCart(product);
                       }
-                      setProductQuantities({...productQuantities, [product.id]: 1});
+                      // Ne pas réinitialiser la quantité à 1, conserver le choix du client
                     }}
                     className="premium-button mt-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-xl transform hover:scale-105"
                   >
@@ -419,7 +419,7 @@ const { addToCart } = useCart();
               </div>
               <div className="p-4 border border-gray-200 rounded-xl bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Appartement / Code (IMPORTANT)</p>
-                <p className="text-lg font-bold text-gray-900">BP-136835</p>
+                <p className="text-lg font-bold text-red-600">BP-136835</p>
                 <p className="text-sm text-gray-600">Entrez ce code dans le champ « Apartment / Apt » (obligatoire).</p>
               </div>
               <div className="p-4 border border-blue-200 rounded-xl bg-blue-50 md:col-span-2">
@@ -549,7 +549,7 @@ const { addToCart } = useCart();
                 <p className="text-2xl font-semibold">Miami, FL 33166</p>
                 <div className="mt-4 p-4 rounded-lg bg-white/10 border border-white/20">
                   <p className="text-white font-semibold">IMPORTANT : Appartement / Code</p>
-                  <p className="text-yellow-300 text-lg font-bold">BP-136835</p>
+                  <p className="text-red-300 text-lg font-bold">BP-136835</p>
                   <p className="text-blue-100 text-sm">Renseignez ce code dans le champ « Apartment / Apt » lorsque vous expédiez vers l'entrepôt.</p>
                 </div>
                 <p className="text-blue-100 mt-4">
@@ -889,15 +889,15 @@ const { addToCart } = useCart();
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
+      {/* Floating Instagram Button */}
       <a
-        href="https://wa.me/50932836938"
+        href="https://instagram.com/"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center"
-        title="Contact us on WhatsApp"
+        className="fixed bottom-6 right-6 z-40 bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center"
+        title="Visiter notre Instagram"
       >
-        <MessageCircle size={28} />
+        <Instagram size={28} />
       </a>
     </div>
   );
