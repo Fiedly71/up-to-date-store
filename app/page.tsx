@@ -94,34 +94,47 @@ const { addToCart } = useCart();
       <Navbar />
 
       {/* Who We Are Section */}
-      <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4">
-              Qui sommes-nous
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16 animate-fadeInUp">
+            <h2 className="text-4xl sm:text-6xl font-extrabold mb-6">
+              <span className="gradient-text">Qui sommes-nous</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              <span className="font-semibold text-blue-600">Up-to-date Electronic Store</span> est votre partenaire de confiance pour tous vos besoins en électronique et vos exigences d'expédition vers Haïti.
+            <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+              <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Up-to-date Electronic Store</span> est votre partenaire de confiance pour tous vos besoins en électronique et vos exigences d'expédition vers Haïti.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {services.map((service) => {
+            {services.map((service, index) => {
               const IconComponent = service.icon;
+              const gradients = [
+                'from-blue-500 to-cyan-500',
+                'from-purple-500 to-pink-500',
+                'from-orange-500 to-red-500'
+              ];
               return (
                 <div
                   key={service.id}
-                  className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow duration-300"
+                  className="premium-card rounded-2xl p-8 text-center group hover:scale-105 transition-all duration-300"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="flex justify-center mb-4">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                      <IconComponent className="text-blue-600" size={32} />
+                  <div className="flex justify-center mb-6">
+                    <div className={`w-20 h-20 bg-gradient-to-br ${gradients[index]} rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-2xl group-hover:rotate-6 transition-all duration-300`}>
+                      <IconComponent className="text-white" size={36} />
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 leading-relaxed">
                     {service.description}
                   </p>
                 </div>
@@ -132,13 +145,19 @@ const { addToCart } = useCart();
       </section>
 
       {/* Shipping & Tracking Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white py-20 sm:py-32 overflow-hidden">
+        {/* Animated Background Patterns */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-0 w-full h-full" style={{backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)'}}></div>
+          <div className="absolute top-0 right-0 w-full h-full" style={{backgroundImage: 'radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)'}}></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-              Expédiez des électroniques vers Haïti aujourd'hui
+            <h2 className="text-5xl sm:text-6xl font-extrabold mb-6 leading-tight drop-shadow-lg">
+              Expédiez des électroniques vers <span className="text-yellow-300">Haïti</span> aujourd'hui
             </h2>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+            <p className="text-xl sm:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed font-light">
               Expédition rapide, fiable et abordable de Miami vers Cap-Haïtien. Suivez vos colis en temps réel.
             </p>
           </div>
@@ -146,26 +165,28 @@ const { addToCart } = useCart();
           {/* Hero focused on shipping service (search removed from Home) */}
 
           {/* Tracking Bar */}
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <Search className="text-blue-600" size={24} />
-              <h3 className="text-lg font-semibold text-gray-900">Suivre votre colis</h3>
+          <div className="premium-card rounded-2xl p-8 max-w-2xl mx-auto backdrop-blur-xl bg-white/95 shadow-2xl border border-white/20">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Search className="text-white" size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Suivre votre colis</h3>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="text"
                 placeholder="Entrez le numéro de suivi"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="flex-1 px-6 py-4 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 hover:border-gray-300"
               />
               <button
                 onClick={handleTrack}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                className="premium-button bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-10 py-4 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-2xl transform hover:scale-105"
                 aria-label="Suivre le colis"
               >
                 Suivre
-                <ChevronRight size={18} />
+                <ChevronRight size={20} />
               </button>
             </div>
           </div>
@@ -173,13 +194,15 @@ const { addToCart } = useCart();
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 sm:py-24 bg-white">
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <ShoppingCart className="text-blue-600" size={32} />
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                Nos Produits
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <ShoppingCart className="text-white" size={28} />
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-extrabold">
+                <span className="gradient-text">Nos Produits</span>
               </h2>
             </div>
             <p className="text-lg text-gray-600">
@@ -188,30 +211,32 @@ const { addToCart } = useCart();
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {allProducts.slice(0, 4).map((product) => (
+            {allProducts.slice(0, 4).map((product, index) => (
               <div
                 key={product.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col"
+                className="premium-card rounded-2xl overflow-hidden flex flex-col group"
+                style={{ animationDelay: `${index * 75}ms` }}
               >
-                <div className="relative h-40 sm:h-44 bg-gray-100 overflow-hidden">
+                <div className="relative h-40 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
-                    className="object-cover hover:scale-110 transition-transform duration-300"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
-                <div className="p-4 flex flex-col flex-grow">
-                  <h3 className="text-md font-semibold text-gray-900 mb-3">
+                <div className="p-4 flex flex-col flex-grow bg-white">
+                  <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
-               <button
-  onClick={() => addToCart(product)}
-  className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
->
-  <ShoppingCart size={16} />
-  Ajouter au panier
-</button>
+                  <button
+                    onClick={() => addToCart(product)}
+                    className="premium-button mt-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-xl transform hover:scale-105"
+                  >
+                    <ShoppingCart size={16} />
+                    Ajouter
+                  </button>
                 </div>
               </div>
             ))}
@@ -220,33 +245,38 @@ const { addToCart } = useCart();
           <div className="text-center">
             <Link
               href="/produits"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold text-base transition-all duration-200 shadow-md hover:shadow-lg"
+              className="premium-button inline-block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105"
             >
-              See All Products
+              Voir tous les produits
             </Link>
           </div>
         </div>
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-16 sm:py-24 bg-gradient-to-b from-gray-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 right-20 w-64 h-64 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div className="absolute bottom-10 left-20 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Pourquoi choisir Up-to-date Electronic Store ?
+            <h2 className="text-4xl sm:text-5xl font-extrabold mb-6">
+              <span className="gradient-text">Pourquoi choisir Up-to-date ?</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed">
               Découvrez ce qui nous rend différents et pourquoi les clients nous font confiance
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Meilleurs prix */}
-            <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow duration-300 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mb-6">
-                <DollarSign className="text-green-600" size={32} />
+            <div className="premium-card rounded-2xl p-10 flex flex-col items-center text-center group hover:scale-105 transition-all duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-2xl group-hover:rotate-6 transition-all duration-300">
+                <DollarSign className="text-white" size={36} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-green-600 group-hover:to-emerald-600 group-hover:bg-clip-text transition-all">
                 Meilleurs prix au Cap
               </h3>
               <p className="text-gray-600 leading-relaxed">
@@ -255,11 +285,11 @@ const { addToCart } = useCart();
             </div>
 
             {/* Livraison Rapide */}
-            <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow duration-300 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-6">
-                <Truck className="text-blue-600" size={32} />
+            <div className="premium-card rounded-2xl p-10 flex flex-col items-center text-center group hover:scale-105 transition-all duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-cyan-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-2xl group-hover:rotate-6 transition-all duration-300">
+                <Truck className="text-white" size={36} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-cyan-600 group-hover:bg-clip-text transition-all">
                 Livraison Rapide & Shipping USA
               </h3>
               <p className="text-gray-600 leading-relaxed">
@@ -268,11 +298,11 @@ const { addToCart } = useCart();
             </div>
 
             {/* Support 24/7 */}
-            <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow duration-300 flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mb-6">
-                <MessageCircle className="text-orange-600" size={32} />
+            <div className="premium-card rounded-2xl p-10 flex flex-col items-center text-center group hover:scale-105 transition-all duration-300">
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-red-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-2xl group-hover:rotate-6 transition-all duration-300">
+                <MessageCircle className="text-white" size={36} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-red-600 group-hover:bg-clip-text transition-all">
                 Support WhatsApp 24/7
               </h3>
               <p className="text-gray-600 leading-relaxed">
