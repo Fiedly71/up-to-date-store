@@ -41,15 +41,6 @@ export default function RootLayout({
           📦 Prochain départ des USA : Vendredi prochain ! | 📲 Devis gratuit via WhatsApp.
         </div>
 
-        {/* 2nd Anniversary Banner */}
-        <div className="w-full bg-yellow-300 text-center py-4">
-          <img
-            src="/2nd.png"
-            alt="2nd Anniversary Celebration"
-            className="mx-auto h-40 object-contain"
-          />
-        </div>
-
         <div className="pt-4">
           {children}
           <Analytics />

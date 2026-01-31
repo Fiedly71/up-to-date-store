@@ -23,11 +23,19 @@ export default function Navbar() {
               height={48} 
               className="rounded-xl object-contain shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110" 
             />
+            <div>
+              <h1 className="hidden sm:block text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Up-to-date Store
+              </h1>
+              <h1 className="sm:hidden text-lg font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                UP-TO-DATE
+              </h1>
+            </div>
             <Image
               src="/2nd.png"
               alt="2nd Anniversary Celebration"
-              width={48}
-              height={48}
+              width={64}
+              height={64}
               className="object-contain"
             />
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
