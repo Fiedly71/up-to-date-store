@@ -4,8 +4,15 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ShoppingCart, MessageCircle, Search, Sparkles } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
-import { products } from "@/app/data/products";
 import { useCart } from '../context/CartContext'; // Import correct
+
+const newArrivals = [
+  { id: 101, name: "Sunset Light", image: "/Sunset light.jpg" },
+  { id: 102, name: "Smart Watch", image: "/Smart watch.jpg" },
+  { id: 103, name: "Smart Projector", image: "/Smart Projector.jpg" },
+  { id: 104, name: "Phone Light", image: "/Phone Light.jpg" },
+  { id: 105, name: "LED Light", image: "/Led2.jpg" },
+];
 
 export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,7 +21,7 @@ export default function Produits() {
   // 1. ON PLACE LE HOOK ICI (à l'intérieur de la fonction)
   const { addToCart, removeFromCart } = useCart();
 
-  const filteredProducts = products.filter((product) =>
+  const filteredProducts = newArrivals.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
