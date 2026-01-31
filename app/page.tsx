@@ -135,7 +135,7 @@ export default function Home() {
               <img
                 src="/2nd.png"
                 alt="2nd Anniversary Celebration"
-                className="h-48 sm:h-64 object-contain"
+                className="h-40 sm:h-64 object-contain max-w-full"
               />
             </div>
           </div>
