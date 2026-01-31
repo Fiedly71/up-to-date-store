@@ -122,13 +122,22 @@ export default function Home() {
         </div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16 animate-fadeInUp">
-            <h2 className="text-4xl sm:text-6xl font-extrabold mb-6">
-              <span className="gradient-text">Qui sommes-nous</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-              <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Up-to-date Electronic Store</span> est votre partenaire de confiance pour tous vos besoins en électronique et vos exigences d'expédition vers Haïti.
-            </p>
+          <div className="flex justify-between items-center mb-16 animate-fadeInUp">
+            <div className="text-center">
+              <h2 className="text-4xl sm:text-6xl font-extrabold mb-6">
+                <span className="gradient-text">Qui sommes-nous</span>
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+                <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Up-to-date Electronic Store</span> est votre partenaire de confiance pour tous vos besoins en électronique et vos exigences d'expédition vers Haïti.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <img
+                src="/2nd.png"
+                alt="2nd Anniversary Celebration"
+                className="h-40 object-contain"
+              />
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
