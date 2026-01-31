@@ -227,11 +227,16 @@ const { addToCart, removeFromCart } = useCart();
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {allProducts.slice(0, 4).map((product, index) => (
+            {[
+              { name: "Sunset Light", image: "/Sunset light.jpg" },
+              { name: "Smart Watch", image: "/Smart watch.jpg" },
+              { name: "Smart Projector", image: "/Smart Projector.jpg" },
+              { name: "Phone Light", image: "/Phone Light.jpg" },
+              { name: "LED Light", image: "/Led2.jpg" },
+            ].map((product, index) => (
               <div
-                key={product.id}
+                key={index}
                 className="premium-card rounded-2xl overflow-hidden flex flex-col group"
-                style={{ animationDelay: `${index * 75}ms` }}
               >
                 <div className="relative h-40 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                   <Image
@@ -246,73 +251,16 @@ const { addToCart, removeFromCart } = useCart();
                   <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
-                  <div className="mb-3">
-                    <label className="block text-xs font-semibold text-gray-600 mb-2">Quantité</label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
-                        onClick={() => {
-                          const current = productQuantities[product.id] || 0;
-                          const next = Math.max(0, current - 1);
-                          setProductQuantities({ ...productQuantities, [product.id]: next });
-                        }}
-                      >
-                        -
-                      </button>
-                      <div className="px-4 py-2 border border-gray-300 rounded-lg min-w-12 text-center font-semibold text-gray-900">
-                        {productQuantities[product.id] || 0}
-                      </div>
-                      <button
-                        type="button"
-                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
-                        onClick={() => {
-                          const current = productQuantities[product.id] || 0;
-                          const next = Math.min(99, current + 1);
-                          setProductQuantities({ ...productQuantities, [product.id]: next });
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-auto flex items-center gap-2">
-                    {(() => {
-                      const q = productQuantities[product.id] || 0;
-                      return (
-                        <>
-                          <button
-                            onClick={() => {
-                              const quantity = q;
-                              if (quantity <= 0) return;
-                              removeFromCart(product.id);
-                              for (let i = 0; i < quantity; i++) {
-                                addToCart(product);
-                              }
-                            }}
-                            disabled={q === 0}
-                            className={`premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md ${q === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'}`}
-                          >
-                            <ShoppingCart size={16} />
-                            Ajouter
-                          </button>
-                          {q > 0 && (
-                            <button
-                              onClick={() => {
-                                removeFromCart(product.id);
-                                setProductQuantities({ ...productQuantities, [product.id]: 0 });
-                              }}
-                              className="px-3 py-2 rounded-xl border-2 border-red-600 text-red-600 font-semibold hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center gap-1"
-                            >
-                              {/* icon imported at top */}
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
-                              Retirer
-                            </button>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
+                  <button
+                    onClick={() => {
+                      const message = `Bonjour Up-to-date Store, je suis intéressé par le ${product.name}. Est-il disponible ?`;
+                      const encodedMessage = encodeURIComponent(message);
+                      window.open(`https://wa.me/50932836938?text=${encodedMessage}`, "_blank");
+                    }}
+                    className="premium-button bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                    Contacter sur WhatsApp
+                  </button>
                 </div>
               </div>
             ))}
