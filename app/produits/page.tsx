@@ -173,7 +173,7 @@ export default function Produits() {
                                 if (quantity <= 0) return;
                                 removeFromCart(product.id);
                                 for (let i = 0; i < quantity; i++) {
-                                  addToCart(product);
+                                  addToCart(product, quantity);
                                 }
                               }}
                               disabled={q === 0}

@@ -10,7 +10,7 @@ interface Product {
 
 interface CartContextType {
   cart: Product[];
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, quantity: number) => void;
   removeFromCart: (productId: string | number) => void;
 }
 
@@ -36,15 +36,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [cart, isLoaded]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number) => {
     setCart((prev) => {
       const exists = prev.find((item) => item.id === product.id);
       if (exists) {
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+          item.id === product.id
+            ? { ...item, quantity: (item.quantity || 0) + quantity }
+            : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity }];
     });
   };
 
