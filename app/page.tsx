@@ -297,9 +297,7 @@ export default function Home() {
                               const quantity = q;
                               if (quantity <= 0) return;
                               removeFromCart(product.id);
-                              for (let i = 0; i < quantity; i++) {
-                                addToCart(product, productQuantities[product.id] || 1);
-                              }
+                              addToCart(product, quantity);
                             }}
                             disabled={q === 0}
                             className={`premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md w-full sm:w-auto ${q === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'}`}
