@@ -12,6 +12,7 @@ const newArrivals = [
   { id: 103, name: "Smart Projector", image: "/Smart Projector.jpg" },
   { id: 104, name: "Phone Light", image: "/Phone Light.jpg" },
   { id: 105, name: "LED Light", image: "/Led2.jpg" },
+  { id: 106, name: "Headphon / 3", image: "/hp.jpg" }, // Nouveau produit ajouté
 ];
 
 export default function Produits() {
