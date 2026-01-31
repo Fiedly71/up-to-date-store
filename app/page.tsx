@@ -298,7 +298,7 @@ export default function Home() {
                               if (quantity <= 0) return;
                               removeFromCart(product.id);
                               for (let i = 0; i < quantity; i++) {
-                                addToCart(product);
+                                addToCart(product, productQuantities[product.id] || 1);
                               }
                             }}
                             disabled={q === 0}
