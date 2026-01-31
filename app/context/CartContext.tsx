@@ -42,7 +42,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       if (exists) {
         return prev.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: (item.quantity || 0) + quantity }
+            ? { ...item, quantity: quantity } // Update quantity directly
             : item
         );
       }
