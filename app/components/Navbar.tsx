@@ -29,8 +29,8 @@ export default function Navbar() {
             <Image
               src="/2nd.png"
               alt="2nd Anniversary Celebration"
-              width={48}
-              height={48}
+              width={64}
+              height={64}
               className="object-contain"
             />
           </div>
