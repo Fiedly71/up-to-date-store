@@ -257,6 +257,36 @@ export default function Home() {
                   <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">Quantité</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          const current = productQuantities[product.id] || 0;
+                          const next = Math.max(0, current - 1);
+                          setProductQuantities({ ...productQuantities, [product.id]: next });
+                        }}
+                      >
+                        -
+                      </button>
+                      <div className="px-4 py-2 border border-gray-300 rounded-lg min-w-12 text-center font-semibold text-gray-900">
+                        {productQuantities[product.id] || 0}
+                      </div>
+                      <button
+                        type="button"
+                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          const current = productQuantities[product.id] || 0;
+                          const next = Math.min(99, current + 1);
+                          setProductQuantities({ ...productQuantities, [product.id]: next });
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-auto flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
                     {(() => {
                       const q = productQuantities[product.id] || 0;
