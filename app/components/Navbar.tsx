@@ -27,13 +27,6 @@ export default function Navbar() {
               <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Up-to-date Store
               </h1>
-              <Image
-                src="/2nd.png"
-                alt="2nd Anniversary Celebration"
-                width={64}
-                height={64}
-                className="object-contain"
-              />
             </div>
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </div>
