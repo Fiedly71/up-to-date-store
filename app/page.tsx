@@ -94,10 +94,13 @@ export default function Home() {
     },
   ];
 
-  const products = allProducts.filter((p) =>
-    p.name.toLowerCase().includes(productQuery.toLowerCase())
-  );
-const { addToCart, removeFromCart } = useCart();
+  const products = productQuery
+    ? allProducts.filter((p) =>
+        p.name.toLowerCase().includes(productQuery.toLowerCase())
+      )
+    : allProducts;
+
+  const { addToCart, removeFromCart } = useCart();
   return (
     <div className="min-h-screen bg-white">
       {/* Hide Next.js badge */}
@@ -228,16 +231,19 @@ const { addToCart, removeFromCart } = useCart();
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-              { name: "Sunset Light", image: "/Sunset light.jpg" },
-              { name: "Smart Watch", image: "/Smart watch.jpg" },
-              { name: "Smart Projector", image: "/Smart Projector.jpg" },
-              { name: "Phone Light", image: "/Phone Light.jpg" },
-              { name: "LED Light", image: "/Led2.jpg" },
+              { id: 101, name: "Sunset Light", image: "/Sunset light.jpg" },
+              { id: 102, name: "Smart Watch", image: "/Smart watch.jpg" },
+              { id: 103, name: "Smart Projector", image: "/Smart Projector.jpg" },
+              { id: 104, name: "Phone Light", image: "/Phone Light.jpg" },
+              { id: 105, name: "LED Light", image: "/Led2.jpg" },
             ].map((product, index) => (
               <div
                 key={index}
-                className="premium-card rounded-2xl overflow-hidden flex flex-col group"
+                className="premium-card rounded-2xl overflow-hidden flex flex-col group relative"
               >
+                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
+                  New Arrival
+                </div>
                 <div className="relative h-40 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                   <Image
                     src={product.image}
@@ -253,13 +259,11 @@ const { addToCart, removeFromCart } = useCart();
                   </h3>
                   <button
                     onClick={() => {
-                      const message = `Bonjour Up-to-date Store, je suis intéressé par le ${product.name}. Est-il disponible ?`;
-                      const encodedMessage = encodeURIComponent(message);
-                      window.open(`https://wa.me/50932836938?text=${encodedMessage}`, "_blank");
+                      addToCart(product);
                     }}
-                    className="premium-button bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
                   >
-                    Contacter sur WhatsApp
+                    Ajouter au panier
                   </button>
                 </div>
               </div>
