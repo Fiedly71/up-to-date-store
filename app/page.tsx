@@ -131,11 +131,11 @@ export default function Home() {
                 <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Up-to-date Electronic Store</span> est votre partenaire de confiance pour tous vos besoins en électronique et vos exigences d'expédition vers Haïti.
               </p>
             </div>
-            <div className="absolute top-0 right-1/2 transform translate-x-1/2 -translate-y-1/2 sm:right-0 sm:translate-x-0 sm:translate-y-0">
+            <div className="absolute top-0 right-1/2 transform translate-x-1/2 -translate-y-1/2 sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:top-auto sm:relative">
               <img
                 src="/2nd.png"
                 alt="2nd Anniversary Celebration"
-                className="h-40 sm:h-64 object-contain max-w-full"
+                className="h-40 sm:h-64 object-contain max-w-full mx-auto sm:mx-0"
               />
             </div>
           </div>
