@@ -257,14 +257,42 @@ export default function Home() {
                   <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
-                  <button
-                    onClick={() => {
-                      addToCart(product);
-                    }}
-                    className="premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
-                  >
-                    Ajouter au panier
-                  </button>
+                  <div className="mt-auto flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
+                    {(() => {
+                      const q = productQuantities[product.id] || 0;
+                      return (
+                        <>
+                          <button
+                            onClick={() => {
+                              const quantity = q;
+                              if (quantity <= 0) return;
+                              removeFromCart(product.id);
+                              for (let i = 0; i < quantity; i++) {
+                                addToCart(product);
+                              }
+                            }}
+                            disabled={q === 0}
+                            className={`premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md w-full sm:w-auto ${q === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'}`}
+                          >
+                            <ShoppingCart size={16} />
+                            <span>Ajouter au panier</span>
+                          </button>
+                          {q > 0 && (
+                            <button
+                              onClick={() => {
+                                removeFromCart(product.id);
+                                setProductQuantities({ ...productQuantities, [product.id]: 0 });
+                              }}
+                              className="px-2 sm:px-3 py-2 rounded-xl border-2 border-red-600 text-red-600 font-semibold text-xs sm:text-sm hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center gap-1 sm:gap-2 self-stretch sm:self-auto"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                              Retirer
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
             ))}
