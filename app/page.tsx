@@ -135,7 +135,7 @@ export default function Home() {
               <img
                 src="/2nd.png"
                 alt="2nd Anniversary Celebration"
-                className="h-32 sm:h-40 object-contain"
+                className="h-48 sm:h-64 object-contain"
               />
             </div>
           </div>
