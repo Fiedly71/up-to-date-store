@@ -15,13 +15,20 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/90 shadow-lg border-b border-gray-200/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 sm:gap-6 group">
-          <div className="relative">
+          <div className="relative flex items-center gap-2">
             <Image 
               src="/UPTODATE%20logo.jpg" 
               alt="UPTOdate logo" 
               width={48} 
               height={48} 
               className="rounded-xl object-contain shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110" 
+            />
+            <Image
+              src="/2nd.png"
+              alt="2nd Anniversary Celebration"
+              width={48}
+              height={48}
+              className="object-contain"
             />
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </div>
