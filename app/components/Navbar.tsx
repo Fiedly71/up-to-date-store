@@ -23,7 +23,7 @@ export default function Navbar() {
               height={48} 
               className="rounded-xl object-contain shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:scale-110" 
             />
-            <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="hidden sm:block text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               Up-to-date Store
             </h1>
             <Image
