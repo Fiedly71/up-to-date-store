@@ -133,7 +133,7 @@ export default function PanierPage() {
 
                     <div className="space-y-3">
                       <a
-                        href="https://wa.me/50932836938?text=Bonjour, je voudrais commander les produits de mon panier"
+                        href={`https://wa.me/50932836938?text=Bonjour, je voudrais commander les produits suivants : ${cart.map(item => `\n- ${item.name} (Quantité: ${item.quantity || 1})`).join('')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="premium-button w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105"

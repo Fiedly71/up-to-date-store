@@ -969,10 +969,10 @@ export default function Home() {
         href="https://instagram.com/"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 bg-pink-600 hover:bg-pink-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 flex items-center justify-center"
+        className="fixed bottom-6 right-6 z-40 bg-pink-600 hover:bg-pink-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-125 flex items-center justify-center"
         title="Visiter notre Instagram"
       >
-        <Instagram size={28} />
+        <Instagram size={24} />
       </a>
     </div>
   );
