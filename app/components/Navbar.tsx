@@ -1,16 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 // On ajoute ShoppingCart ici pour l'icône
 import { MessageCircle, Menu, X, ShoppingCart } from "lucide-react"; 
 import { useCart } from '../context/CartContext'; 
 
-export default function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { cart } = useCart(); // Récupère les données du panier
+// Import Supabase client (adapt to your setup if needed)
+import { createClient } from '@supabase/supabase-js';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
+export default function Navbar(): React.ReactElement {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { cart } = useCart();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let ignore = false;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!ignore) {
+        setUser(data.user);
+        setLoading(false);
+      }
+    });
+    // Listen to auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      ignore = true;
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/90 shadow-lg border-b border-gray-200/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -50,6 +76,25 @@ export default function Navbar() {
           <Link href="/restrictions" className="px-4 py-2 text-gray-700 hover:text-red-600 font-semibold transition-colors duration-300 rounded-lg hover:bg-red-50">
             Produits Interdits
           </Link>
+          {/* Auth Buttons */}
+          {!loading && !user && (
+            <>
+              <Link href="/login.html" className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Login</Link>
+              <Link href="/signup.html" className="ml-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">Sign Up</Link>
+            </>
+          )}
+          {!loading && user && (
+            <>
+              <Link href="/my-orders.html" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">My Orders</Link>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                }}
+                className="ml-2 px-4 py-2 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-900 transition"
+              >Logout</button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
@@ -121,6 +166,25 @@ export default function Navbar() {
               </span>
             )}
           </Link>
+          {/* Auth Buttons Mobile */}
+          {!loading && !user && (
+            <>
+              <Link href="/login.html" className="block w-full text-center mt-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">Login</Link>
+              <Link href="/signup.html" className="block w-full text-center mt-2 px-4 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition">Sign Up</Link>
+            </>
+          )}
+          {!loading && user && (
+            <>
+              <Link href="/my-orders.html" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition">My Orders</Link>
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                }}
+                className="block w-full text-center mt-2 px-4 py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-900 transition"
+              >Logout</button>
+            </>
+          )}
         </div>
       )}
     </nav>

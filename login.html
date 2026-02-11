@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+    <h1 class="text-2xl font-bold mb-6 text-center">Sign In</h1>
+    <form id="login-form" class="flex flex-col gap-4">
+      <input type="email" id="email" placeholder="Email" required class="px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
+      <input type="password" id="password" placeholder="Password" required class="px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Sign In</button>
+    </form>
+    <div id="login-error" class="text-red-600 mt-4 text-center hidden"></div>
+  </div>
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://okhwcgowtrrtdkssxivp.supabase.co',
+      'sb_publishable_o9xgjUjgM7QzjvWARmZjbQ_t_T-Rnfb'
+    );
+    async function handleLogin(email, password) {
+      document.getElementById('login-error').classList.add('hidden');
+      // 1. Connexion via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) {
+        document.getElementById('login-error').textContent = authError.message;
+        document.getElementById('login-error').classList.remove('hidden');
+        return;
+      }
+      // 2. Récupérer le rôle dans la table profiles
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', authData.user.id)
+        .single();
+      if (profileError) {
+        document.getElementById('login-error').textContent = 'Erreur lors de la récupération du profil.';
+        document.getElementById('login-error').classList.remove('hidden');
+        return;
+      }
+      // 3. Redirection intelligente
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect');
+      if (profile && profile.is_admin) {
+        window.location.href = '/admin-panel.html';
+      } else if (redirect) {
+        window.location.href = redirect;
+      } else {
+        window.location.href = '/my-orders.html';
+      }
+    }
+
+    // Affiche le message si présent dans l'URL
+    window.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const msg = urlParams.get('message');
+      if (msg) {
+        document.getElementById('login-error').textContent = msg;
+        document.getElementById('login-error').classList.remove('hidden');
+      }
+    });
+
+    // Exemple d'intégration dans le submit du formulaire
+    document.getElementById('login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      await handleLogin(email, password);
+    };
+  </script>
+</body>
+</html>

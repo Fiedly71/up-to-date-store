@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-3xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-8 text-center">My Wholesale Orders</h1>
+    <div id="auth-section" class="mb-8"></div>
+    <div id="orders-section"></div>
+  </div>
+  <script>
+    // --- Supabase Setup ---
+    const supabase = window.supabase.createClient(
+      'https://okhwcgowtrrtdkssxivp.supabase.co',
+      'sb_publishable_o9xgjUjgM7QzjvWARmZjbQ_t_T-Rnfb'
+    );
+
+    // --- Auth & Orders Logic ---
+    let userEmail = null;
+    async function checkAuthAndLoadOrders() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        document.getElementById('auth-section').innerHTML = `
+          <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-6 text-center">
+            Please <a href="/login.html" class="underline font-bold">log in</a> to view your orders.
+          </div>
+        `;
+        document.getElementById('orders-section').innerHTML = '';
+        return;
+      }
+      userEmail = user.email;
+      document.getElementById('auth-section').innerHTML = '';
+      loadOrders();
+    }
+
+    async function loadOrders() {
+      const { data: orders, error } = await supabase
+        .from('wholesale_orders')
+        .select('*')
+        .eq('user_email', userEmail)
+        .order('created_at', { ascending: false });
+      if (error) {
+        document.getElementById('orders-section').innerHTML = '<div class="text-red-600">Failed to load orders.</div>';
+        return;
+      }
+      if (!orders || orders.length === 0) {
+        document.getElementById('orders-section').innerHTML = `
+          <div class="text-center py-12">
+            <p class="mb-6 text-gray-600">You have no orders yet.</p>
+            <a href="/" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition">Start Your First Import</a>
+          </div>
+        `;
+        return;
+      }
+      document.getElementById('orders-section').innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white rounded-xl shadow-md">
+            <thead>
+              <tr>
+                <th class="px-4 py-2 text-left">Date</th>
+                <th class="px-4 py-2 text-left">Product Name</th>
+                <th class="px-4 py-2 text-left">Total Price</th>
+                <th class="px-4 py-2 text-left">Status</th>
+                <th class="px-4 py-2 text-left">Tracking</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orders.map(order => renderOrderRow(order)).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderOrderRow(order) {
+      // Status color and message
+      let statusColor = 'bg-gray-200 text-gray-800';
+      let statusMsg = '';
+      if (order.order_status === 'awaiting_payment') {
+        statusColor = 'bg-yellow-200 text-yellow-800';
+        statusMsg = 'Please pay at the store';
+      } else if (order.order_status === 'processing') {
+        statusColor = 'bg-blue-200 text-blue-800';
+        statusMsg = 'Order placed on AliExpress';
+      } else if (order.order_status === 'shipped_to_miami') {
+        statusColor = 'bg-purple-200 text-purple-800';
+        statusMsg = 'In transit to our Miami Hub';
+      } else if (order.order_status === 'arrived_haiti') {
+        statusColor = 'bg-green-200 text-green-800';
+        statusMsg = 'Ready for pickup in Cap-Haïtien!';
+      }
+      // Tracking numbers
+      let trackingInfo = '';
+      if (order.miami_tracking_number) {
+        trackingInfo += `<div class="text-xs text-blue-700">Miami: ${order.miami_tracking_number}</div>`;
+      }
+      if (order.haiti_tracking_number) {
+        trackingInfo += `<div class="text-xs text-green-700">Haiti: ${order.haiti_tracking_number}</div>`;
+      }
+      return `
+        <tr>
+          <td class="px-4 py-2 text-sm">${new Date(order.created_at).toLocaleDateString()}</td>
+          <td class="px-4 py-2 text-sm">${order.product_name}</td>
+          <td class="px-4 py-2 text-sm">$${order.total_price_with_fees}</td>
+          <td class="px-4 py-2 text-sm">
+            <span class="px-2 py-1 rounded ${statusColor} font-semibold">${order.order_status.replace('_', ' ')}</span>
+            <div class="text-xs mt-1">${statusMsg}</div>
+          </td>
+          <td class="px-4 py-2 text-sm">${trackingInfo || '-'}</td>
+        </tr>
+      `;
+    }
+
+    // Real-time updates (optional, can be removed if not needed)
+    supabase.channel('orders').on('postgres_changes', { event: '*', schema: 'public', table: 'wholesale_orders' }, loadOrders).subscribe();
+
+    checkAuthAndLoadOrders();
+  </script>
+</body>
+</html>

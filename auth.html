@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authentication | Up-to-date Electronic</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <style>
+    body { background: #f8fafc; }
+    .brand-gradient { background: linear-gradient(90deg, #2563eb 0%, #9333ea 100%); }
+    .brand-btn { background: linear-gradient(90deg, #2563eb 0%, #9333ea 100%); color: #fff; }
+    .brand-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .input-error { border-color: #ef4444; }
+    .error-msg { color: #ef4444; font-size: 0.95rem; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-center items-center px-2">
+  <!-- Header -->
+  <header class="w-full flex items-center justify-between py-3 px-4 bg-white shadow-md fixed top-0 left-0 z-40">
+    <div class="flex items-center gap-2">
+      <img src="/UPTODATE%20logo.jpg" alt="Logo" class="w-10 h-10 rounded-xl object-contain" />
+      <span class="font-bold text-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Up-to-date</span>
+    </div>
+    <nav class="flex items-center gap-2 md:gap-4">
+      <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-gray-100 focus:outline-none">
+        <svg id="menu-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <svg id="close-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <a href="/my-orders.html" id="my-orders-link" class="hidden md:inline-block px-4 py-2 rounded-lg font-semibold text-blue-700 hover:bg-blue-50">My Orders</a>
+      <button id="logout-btn" class="hidden md:inline-block px-4 py-2 rounded-lg font-semibold text-white brand-btn">Logout</button>
+    </nav>
+  </header>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="fixed top-16 left-0 w-full bg-white shadow-lg z-50 flex flex-col items-center py-4 gap-2 hidden">
+    <a href="/my-orders.html" class="w-11/12 text-center py-3 rounded-lg font-semibold text-blue-700 hover:bg-blue-50">My Orders</a>
+    <button id="logout-btn-mobile" class="w-11/12 py-3 rounded-lg font-semibold text-white brand-btn">Logout</button>
+  </div>
+
+  <!-- Auth Card -->
+  <main class="w-full max-w-sm mx-auto mt-28 mb-8 p-6 bg-white rounded-2xl shadow-xl flex flex-col gap-6">
+    <div class="flex justify-center gap-2 mb-2">
+      <button id="show-login" class="flex-1 py-2 rounded-lg font-bold text-blue-700 bg-blue-50">Login</button>
+      <button id="show-signup" class="flex-1 py-2 rounded-lg font-bold text-purple-700 bg-purple-50">Sign Up</button>
+    </div>
+    <!-- Login Form -->
+    <form id="login-form" class="flex flex-col gap-4" autocomplete="on">
+      <input type="email" id="login-email" class="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500" placeholder="Email" required />
+      <input type="password" id="login-password" class="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500" placeholder="Password" required />
+      <button type="submit" class="brand-btn py-3 rounded-lg font-bold text-lg mt-2">Login</button>
+      <div id="login-error" class="error-msg mt-1 hidden"></div>
+    </form>
+    <!-- Sign Up Form -->
+    <form id="signup-form" class="flex flex-col gap-4 hidden" autocomplete="on">
+      <input type="email" id="signup-email" class="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500" placeholder="Email" required />
+      <input type="password" id="signup-password" class="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500" placeholder="Password" required />
+      <ul id="password-criteria" class="text-xs text-gray-600 space-y-1 mb-1">
+        <li id="length-criteria">• At least 8 characters</li>
+        <li id="uppercase-criteria">• One uppercase letter</li>
+        <li id="number-criteria">• One number</li>
+        <li id="special-criteria">• One special character</li>
+      </ul>
+      <button type="submit" id="signup-btn" class="brand-btn py-3 rounded-lg font-bold text-lg mt-2" disabled>Sign Up</button>
+      <div id="signup-error" class="error-msg mt-1 hidden"></div>
+    </form>
+  </main>
+
+  <script>
+    // --- Supabase Setup ---
+    const supabase = window.supabase.createClient(
+      'https://okhwcgowtrrtdkssxivp.supabase.co',
+      'sb_publishable_o9xgjUjgM7QzjvWARmZjbQ_t_T-Rnfb'
+    );
+
+    // --- UI State ---
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const showLoginBtn = document.getElementById('show-login');
+    const showSignupBtn = document.getElementById('show-signup');
+    const loginError = document.getElementById('login-error');
+    const signupError = document.getElementById('signup-error');
+    const signupBtn = document.getElementById('signup-btn');
+    const passwordInput = document.getElementById('signup-password');
+    const criteria = {
+      length: document.getElementById('length-criteria'),
+      uppercase: document.getElementById('uppercase-criteria'),
+      number: document.getElementById('number-criteria'),
+      special: document.getElementById('special-criteria'),
+    };
+
+    // --- Mobile Menu ---
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+    const closeIcon = document.getElementById('close-icon');
+    mobileMenuBtn.onclick = () => {
+      mobileMenu.classList.toggle('hidden');
+      menuIcon.classList.toggle('hidden');
+      closeIcon.classList.toggle('hidden');
+    };
+    document.getElementById('logout-btn-mobile').onclick = logout;
+    document.getElementById('logout-btn').onclick = logout;
+
+    // --- Tab Switch ---
+    showLoginBtn.onclick = () => {
+      loginForm.classList.remove('hidden');
+      signupForm.classList.add('hidden');
+      showLoginBtn.classList.add('bg-blue-50', 'text-blue-700');
+      showSignupBtn.classList.remove('bg-purple-50', 'text-purple-700');
+    };
+    showSignupBtn.onclick = () => {
+      loginForm.classList.add('hidden');
+      signupForm.classList.remove('hidden');
+      showSignupBtn.classList.add('bg-purple-50', 'text-purple-700');
+      showLoginBtn.classList.remove('bg-blue-50', 'text-blue-700');
+    };
+
+    // --- Password Validation ---
+    function validatePassword(pw) {
+      const length = pw.length >= 8;
+      const uppercase = /[A-Z]/.test(pw);
+      const number = /[0-9]/.test(pw);
+      const special = /[^A-Za-z0-9]/.test(pw);
+      criteria.length.style.color = length ? '#16a34a' : '#ef4444';
+      criteria.uppercase.style.color = uppercase ? '#16a34a' : '#ef4444';
+      criteria.number.style.color = number ? '#16a34a' : '#ef4444';
+      criteria.special.style.color = special ? '#16a34a' : '#ef4444';
+      return length && uppercase && number && special;
+    }
+    passwordInput.oninput = function() {
+      const valid = validatePassword(passwordInput.value);
+      signupBtn.disabled = !valid;
+      if (!valid) passwordInput.classList.add('input-error');
+      else passwordInput.classList.remove('input-error');
+    };
+
+    // --- Login Logic ---
+    loginForm.onsubmit = async function(e) {
+      e.preventDefault();
+      loginError.classList.add('hidden');
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        loginError.textContent = error.message.includes('Invalid login credentials') ? 'Incorrect email or password.' : error.message;
+        loginError.classList.remove('hidden');
+        return;
+      }
+      // Fetch profile for role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', data.user.id)
+        .single();
+      if (profileError) {
+        loginError.textContent = 'Could not fetch user profile.';
+        loginError.classList.remove('hidden');
+        return;
+      }
+      // Redirect by role
+      if (profile && profile.is_admin) {
+        window.location.href = '/admin-panel.html';
+      } else {
+        window.location.href = '/my-orders.html';
+      }
+    };
+
+    // --- Sign Up Logic ---
+    signupForm.onsubmit = async function(e) {
+      e.preventDefault();
+      signupError.classList.add('hidden');
+      const email = document.getElementById('signup-email').value;
+      const password = passwordInput.value;
+      if (!validatePassword(password)) {
+        signupError.textContent = 'Password does not meet the requirements.';
+        signupError.classList.remove('hidden');
+        return;
+      }
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        if (error.message.includes('already registered')) {
+          signupError.textContent = 'This email is already registered.';
+        } else {
+          signupError.textContent = error.message;
+        }
+        signupError.classList.remove('hidden');
+        return;
+      }
+      // Create profile row (optional, if not handled by trigger)
+      await supabase.from('profiles').insert([{ id: data.user.id, email }]);
+      window.location.href = '/my-orders.html';
+    };
+
+    // --- Logout Logic ---
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    }
+
+    // --- Responsive: Hide nav links if not logged in ---
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      const show = !!session;
+      document.getElementById('my-orders-link').style.display = show ? '' : 'none';
+      document.getElementById('logout-btn').style.display = show ? '' : 'none';
+      document.getElementById('logout-btn-mobile').style.display = show ? '' : 'none';
+    }
+    checkSession();
+    supabase.auth.onAuthStateChange(checkSession);
+  </script>
+</body>
+</html>

@@ -29,13 +29,40 @@ import {
 } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { products as allProducts } from "@/app/data/products";
+import { calculateFinalPrice, getPriceBreakdown } from "@/app/utils/pricing";
 
 export default function Home() {
   const [weight, setWeight] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [productQuery, setProductQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
+
+  // AliExpress Search Handler
+  const handleAliExpressSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSearchResults([]);
+    try {
+      const response = await fetch(`https://ali-express1.p.rapidapi.com/search?query=${encodeURIComponent(productQuery)}`, {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Key": "d345cf7a9dmsh588ba309bb4807fp11a983jsnc43ad765201f",
+          "X-RapidAPI-Host": "ali-express1.p.rapidapi.com"
+        }
+      });
+      const data = await response.json();
+      setSearchResults(data.docs || []);
+    } catch (err) {
+      setError("Erreur lors de la recherche. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Persistance des quantités sélectionnées sur la page d'accueil
   useEffect(() => {
@@ -103,6 +130,117 @@ export default function Home() {
   const { addToCart, removeFromCart } = useCart();
   return (
     <div className="min-h-screen bg-white">
+      {/* --- HERO SECTION: Assisted Ordering Service --- */}
+      <section className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-12 px-4 text-white flex flex-col items-center mb-8">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-center mb-4 drop-shadow-lg">
+          Nous commandons pour vous.<br/>Importations sécurisées en gros de Chine vers Haïti
+        </h1>
+        <p className="text-lg md:text-2xl text-center mb-8 max-w-2xl">
+          Service de Commande Assistée : Trouvez vos produits sur AliExpress, payez localement, et récupérez-les à notre magasin à Champin.
+        </p>
+        <form onSubmit={handleAliExpressSearch} className="w-full max-w-xl flex flex-col sm:flex-row gap-2 items-center justify-center mx-auto">
+          <input
+            type="text"
+            className="flex-1 w-full sm:w-auto px-4 py-3 rounded-l-lg text-gray-900 focus:outline-none placeholder-gray-400 border border-gray-200 focus:ring-2 focus:ring-orange-400"
+            placeholder="Search for wholesale products from China..."
+            value={productQuery}
+            onChange={e => setProductQuery(e.target.value)}
+            required
+            style={{ minWidth: 0 }}
+          />
+          <button
+            type="submit"
+            className="flex items-center justify-center bg-[#FF4747] hover:bg-[#e63b3b] px-6 py-3 rounded-r-lg font-bold text-white transition w-full sm:w-auto"
+            disabled={loading}
+            style={{ minWidth: '48px' }}
+          >
+            <Search className="mr-2" size={20} />
+            <span className="hidden sm:inline">{loading ? "Searching..." : "Search"}</span>
+          </button>
+        </form>
+        {/* Quick Search Category Buttons */}
+        <div className="flex flex-wrap gap-2 mt-4 justify-center">
+          {[
+            { label: 'Solar', query: 'solar' },
+            { label: 'Inverters', query: 'inverter' },
+            { label: 'Smartwatches', query: 'smartwatch' },
+            { label: 'Phones', query: 'phone' }
+          ].map(cat => (
+            <button
+              key={cat.label}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow hover:from-blue-700 hover:to-purple-700 transition"
+              onClick={() => {
+                setProductQuery(cat.query);
+                setTimeout(() => handleAliExpressSearch({ preventDefault: () => {} } as React.FormEvent), 0);
+              }}
+              type="button"
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </section>
+        {/* Grille des Tarifs (Pricing Grid) */}
+        <section className="py-16 sm:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <h2 className="text-4xl sm:text-5xl font-extrabold mb-8 text-center text-blue-700">Grille des Tarifs</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                <span className="text-2xl font-bold text-blue-600 mb-2">$0 - $50</span>
+                <span className="text-3xl font-extrabold text-gray-900 mb-1">$8</span>
+                <span className="text-gray-500">Frais fixes</span>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                <span className="text-2xl font-bold text-blue-600 mb-2">$50 - $100</span>
+                <span className="text-3xl font-extrabold text-gray-900 mb-1">$12</span>
+                <span className="text-gray-500">Frais fixes</span>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                <span className="text-2xl font-bold text-blue-600 mb-2">$100 - $200</span>
+                <span className="text-3xl font-extrabold text-gray-900 mb-1">$20</span>
+                <span className="text-gray-500">Frais fixes</span>
+              </div>
+              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                <span className="text-2xl font-bold text-blue-600 mb-2">$200+</span>
+                <span className="text-3xl font-extrabold text-gray-900 mb-1">20%</span>
+                <span className="text-gray-500">du prix total</span>
+              </div>
+            </div>
+            {/* 3-Step Service Description */}
+            <div className="grid md:grid-cols-3 gap-8 mt-12">
+              <div className="flex flex-col items-center text-center">
+                <Search className="text-blue-600 mb-3" size={36} />
+                <h3 className="text-xl font-bold mb-2">1. Cherchez & Sélectionnez</h3>
+                <p className="text-gray-600">Trouvez vos produits sur AliExpress grâce à notre barre de recherche.</p>
+              </div>
+              <div className="flex flex-col items-center text-center">
+                <DollarSign className="text-blue-600 mb-3" size={36} />
+                <h3 className="text-xl font-bold mb-2">2. Payez localement</h3>
+                <p className="text-gray-600">Régler votre commande à notre magasin (Champin) ou via MonCash.</p>
+              </div>
+              <div className="flex flex-col items-center text-center">
+                <Package className="text-blue-600 mb-3" size={36} />
+                <h3 className="text-xl font-bold mb-2">3. Récupérez votre commande</h3>
+                <p className="text-gray-600">Venez chercher vos produits dès leur arrivée à notre magasin.</p>
+              </div>
+            </div>
+            {/* Trust Icons Row */}
+            <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-16">
+              <div className="flex flex-col items-center">
+                <ShieldCheck className="text-green-600 mb-2" size={32} />
+                <span className="font-semibold text-gray-800">Sécurité</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Clock className="text-blue-600 mb-2" size={32} />
+                <span className="font-semibold text-gray-800">Simplicité</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <Headphones className="text-purple-600 mb-2" size={32} />
+                <span className="font-semibold text-gray-800">Support local</span>
+              </div>
+            </div>
+          </div>
+        </section>
       {/* Hide Next.js badge */}
       <style>{`
         [data-nextjs-dialog] {
@@ -110,6 +248,7 @@ export default function Home() {
         }
       `}</style>
 
+      {/* ...existing code... */}
       <Navbar />
 
       {/* Who We Are Section */}

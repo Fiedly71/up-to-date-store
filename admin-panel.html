@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+  <script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-6xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-8 text-center">Admin Panel - Manage Imports</h1>
+    <div id="stats" class="flex flex-wrap gap-6 justify-center mb-8"></div>
+    <div id="orders-section"></div>
+  </div>
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://okhwcgowtrrtdkssxivp.supabase.co',
+      'sb_publishable_o9xgjUjgM7QzjvWARmZjbQ_t_T-Rnfb'
+    );
+
+    // Security: Only allow admin (check is_admin in profiles)
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) {
+        window.location.href = '/';
+        return;
+      }
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      if (profileError || !profile || !profile.is_admin) {
+        window.location.href = '/';
+        return;
+      }
+      loadOrders();
+    });
+
+    async function loadOrders() {
+      const { data: orders, error } = await supabase
+        .from('wholesale_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        document.getElementById('orders-section').innerHTML = '<div class="text-red-600">Failed to load orders.</div>';
+        return;
+      }
+      renderStats(orders);
+      document.getElementById('orders-section').innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white rounded-xl shadow-md">
+            <thead>
+              <tr>
+                <th class="px-4 py-2 text-left">Date</th>
+                <th class="px-4 py-2 text-left">Customer Email</th>
+                <th class="px-4 py-2 text-left">Product</th>
+                <th class="px-4 py-2 text-left">Total Price</th>
+                <th class="px-4 py-2 text-left">Status</th>
+                <th class="px-4 py-2 text-left">Tracking Number</th>
+                <th class="px-4 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orders.map(order => renderOrderRow(order)).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderStats(orders) {
+      const totalOrders = orders.length;
+      const pendingPayments = orders.filter(o => o.order_status === 'awaiting_payment').length;
+      const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total_price_with_fees) || 0), 0);
+      document.getElementById('stats').innerHTML = `
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500 min-w-[180px]">
+          <span class="text-2xl font-bold text-blue-600 mb-1">${totalOrders}</span>
+          <span class="text-gray-700">Total Orders</span>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-yellow-500 min-w-[180px]">
+          <span class="text-2xl font-bold text-yellow-600 mb-1">${pendingPayments}</span>
+          <span class="text-gray-700">Pending Payments</span>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-green-500 min-w-[180px]">
+          <span class="text-2xl font-bold text-green-600 mb-1">$${totalRevenue.toFixed(2)}</span>
+          <span class="text-gray-700">Total Revenue</span>
+        </div>
+      `;
+    }
+
+    function renderOrderRow(order) {
+      const statusOptions = [
+        'awaiting_payment',
+        'processing',
+        'shipped_to_miami',
+        'arrived_haiti'
+      ];
+      return `
+        <tr id="order-row-${order.id}">
+          <td class="px-4 py-2 text-sm">${new Date(order.created_at).toLocaleDateString()}</td>
+          <td class="px-4 py-2 text-sm">${order.user_email || '-'}</td>
+          <td class="px-4 py-2 text-sm">${order.product_name}</td>
+          <td class="px-4 py-2 text-sm">$${order.total_price_with_fees}</td>
+          <td class="px-4 py-2 text-sm">
+            <select id="status-${order.id}" class="border rounded px-2 py-1">
+              ${statusOptions.map(opt => `<option value="${opt}" ${order.order_status === opt ? 'selected' : ''}>${opt.replace('_', ' ')}</option>`).join('')}
+            </select>
+          </td>
+          <td class="px-4 py-2 text-sm">
+            <input id="tracking-${order.id}" type="text" value="${order.miami_tracking_number || ''}" class="border rounded px-2 py-1 w-32" placeholder="Tracking #" />
+          </td>
+          <td class="px-4 py-2 text-sm">
+            <button onclick="saveOrder('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-bold">Save</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    window.saveOrder = async function(orderId) {
+      const status = document.getElementById(`status-${orderId}`).value;
+      const tracking = document.getElementById(`tracking-${orderId}`).value;
+      const { error } = await supabase
+        .from('wholesale_orders')
+        .update({ order_status: status, miami_tracking_number: tracking })
+        .eq('id', orderId);
+      if (error) {
+        alert('Failed to update order.');
+      } else {
+        loadOrders();
+      }
+    };
+  </script>
+</body>
+</html>
