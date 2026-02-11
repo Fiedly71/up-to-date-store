@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
