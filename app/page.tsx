@@ -179,68 +179,37 @@ export default function Home() {
             </button>
           ))}
         </div>
+        <a href="#pricing-grid" className="mt-6 inline-block bg-white text-blue-700 font-bold px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition">Voir la grille tarifaire ↓</a>
       </section>
-        {/* Grille des Tarifs (Pricing Grid) */}
-        <section className="py-16 sm:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <h2 className="text-4xl sm:text-5xl font-extrabold mb-8 text-center text-blue-700">Grille des Tarifs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-                <span className="text-2xl font-bold text-blue-600 mb-2">$0 - $50</span>
-                <span className="text-3xl font-extrabold text-gray-900 mb-1">$8</span>
-                <span className="text-gray-500">Frais fixes</span>
+      {/* ...existing code... */}
+            {/* Grille des Tarifs (Pricing Grid) - Section finale */}
+            <section id="pricing-grid" className="py-16 sm:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <h2 className="text-4xl sm:text-5xl font-extrabold mb-8 text-center text-blue-700">Grille des Tarifs</h2>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                  <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                    <span className="text-2xl font-bold text-blue-600 mb-2">$0 - $50</span>
+                    <span className="text-3xl font-extrabold text-gray-900 mb-1">$8</span>
+                    <span className="text-gray-500">Frais fixes</span>
+                  </div>
+                  <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                    <span className="text-2xl font-bold text-blue-600 mb-2">$50 - $100</span>
+                    <span className="text-3xl font-extrabold text-gray-900 mb-1">$12</span>
+                    <span className="text-gray-500">Frais fixes</span>
+                  </div>
+                  <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                    <span className="text-2xl font-bold text-blue-600 mb-2">$100 - $200</span>
+                    <span className="text-3xl font-extrabold text-gray-900 mb-1">$20</span>
+                    <span className="text-gray-500">Frais fixes</span>
+                  </div>
+                  <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
+                    <span className="text-2xl font-bold text-blue-600 mb-2">$200+</span>
+                    <span className="text-3xl font-extrabold text-gray-900 mb-1">20%</span>
+                    <span className="text-gray-500">du prix total</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-                <span className="text-2xl font-bold text-blue-600 mb-2">$50 - $100</span>
-                <span className="text-3xl font-extrabold text-gray-900 mb-1">$12</span>
-                <span className="text-gray-500">Frais fixes</span>
-              </div>
-              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-                <span className="text-2xl font-bold text-blue-600 mb-2">$100 - $200</span>
-                <span className="text-3xl font-extrabold text-gray-900 mb-1">$20</span>
-                <span className="text-gray-500">Frais fixes</span>
-              </div>
-              <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-                <span className="text-2xl font-bold text-blue-600 mb-2">$200+</span>
-                <span className="text-3xl font-extrabold text-gray-900 mb-1">20%</span>
-                <span className="text-gray-500">du prix total</span>
-              </div>
-            </div>
-            {/* 3-Step Service Description */}
-            <div className="grid md:grid-cols-3 gap-8 mt-12">
-              <div className="flex flex-col items-center text-center">
-                <Search className="text-blue-600 mb-3" size={36} />
-                <h3 className="text-xl font-bold mb-2">1. Cherchez & Sélectionnez</h3>
-                <p className="text-gray-600">Trouvez vos produits sur AliExpress grâce à notre barre de recherche.</p>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <DollarSign className="text-blue-600 mb-3" size={36} />
-                <h3 className="text-xl font-bold mb-2">2. Payez localement</h3>
-                <p className="text-gray-600">Régler votre commande à notre magasin (Champin) ou via MonCash.</p>
-              </div>
-              <div className="flex flex-col items-center text-center">
-                <Package className="text-blue-600 mb-3" size={36} />
-                <h3 className="text-xl font-bold mb-2">3. Récupérez votre commande</h3>
-                <p className="text-gray-600">Venez chercher vos produits dès leur arrivée à notre magasin.</p>
-              </div>
-            </div>
-            {/* Trust Icons Row */}
-            <div className="flex flex-col md:flex-row justify-center items-center gap-8 mt-16">
-              <div className="flex flex-col items-center">
-                <ShieldCheck className="text-green-600 mb-2" size={32} />
-                <span className="font-semibold text-gray-800">Sécurité</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <Clock className="text-blue-600 mb-2" size={32} />
-                <span className="font-semibold text-gray-800">Simplicité</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <Headphones className="text-purple-600 mb-2" size={32} />
-                <span className="font-semibold text-gray-800">Support local</span>
-              </div>
-            </div>
-          </div>
-        </section>
+            </section>
       {/* Hide Next.js badge */}
       <style>{`
         [data-nextjs-dialog] {

@@ -79,13 +79,13 @@ export default function Navbar(): React.ReactElement {
           {/* Auth Buttons */}
           {!loading && !user && (
             <>
-              <Link href="/login.html" className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Login</Link>
-              <Link href="/signup.html" className="ml-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">Sign Up</Link>
+              <Link href="/auth" className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Login</Link>
+              <Link href="/auth" className="ml-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition">Sign Up</Link>
             </>
           )}
           {!loading && user && (
             <>
-              <Link href="/my-orders.html" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">My Orders</Link>
+              <Link href="/my-orders" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">My Orders</Link>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
@@ -169,13 +169,13 @@ export default function Navbar(): React.ReactElement {
           {/* Auth Buttons Mobile */}
           {!loading && !user && (
             <>
-              <Link href="/login.html" className="block w-full text-center mt-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">Login</Link>
-              <Link href="/signup.html" className="block w-full text-center mt-2 px-4 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition">Sign Up</Link>
+              <Link href="/auth" className="block w-full text-center mt-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">Login</Link>
+              <Link href="/auth" className="block w-full text-center mt-2 px-4 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition">Sign Up</Link>
             </>
           )}
           {!loading && user && (
             <>
-              <Link href="/my-orders.html" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition">My Orders</Link>
+              <Link href="/my-orders" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition">My Orders</Link>
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
