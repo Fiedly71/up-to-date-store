@@ -1,13 +1,11 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-// On ajoute ShoppingCart ici pour l'icône
-import { MessageCircle, Menu, X, ShoppingCart } from "lucide-react"; 
-import { useCart } from '../context/CartContext'; 
-
-// Import Supabase client (adapt to your setup if needed)
+import { MessageCircle, Menu, X, ShoppingCart } from "lucide-react";
+import { useCart } from '../context/CartContext';
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,25 +20,35 @@ export default function Navbar(): React.ReactElement {
 
   useEffect(() => {
     let ignore = false;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!ignore) {
-        setUser(data.user);
-        setLoading(false);
-        // Redirection automatique si déjà connecté
-        if (data.user) {
-          if (data.user.email?.endsWith("@admin.com")) {
-            if (window.location.pathname !== "/admin") window.location.href = "/admin";
-          } else {
-            if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
-          }
+    async function checkUserAndRedirect() {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      setLoading(false);
+      if (data.user) {
+        // Always check is_admin from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', data.user.id)
+          .single();
+        if (profile && profile.is_admin) {
+          if (window.location.pathname !== "/admin") window.location.href = "/admin";
+        } else {
+          if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
         }
       }
-    });
+    }
+    checkUserAndRedirect();
     // Listen to auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user || null);
       if (session?.user) {
-        if (session.user.email?.endsWith("@admin.com")) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+        if (profile && profile.is_admin) {
           if (window.location.pathname !== "/admin") window.location.href = "/admin";
         } else {
           if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
@@ -51,6 +59,19 @@ export default function Navbar(): React.ReactElement {
       ignore = true;
       listener?.subscription.unsubscribe();
     };
+  }, []);
+
+  // Email verification redirect handler
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const type = params.get('type');
+      if (type === 'email_verification') {
+        // Show a message and redirect after a short delay
+        alert('Votre email a été vérifié avec succès. Vous pouvez maintenant vous connecter.');
+        window.location.href = '/auth';
+      }
+    }
   }, []);
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/90 shadow-lg border-b border-gray-200/50">
