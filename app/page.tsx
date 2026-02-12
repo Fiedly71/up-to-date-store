@@ -232,6 +232,100 @@ export default function Home() {
         )}
       </section>
 
+      {/* Commandes Assistées Section */}
+      <section className="py-16 sm:py-24 bg-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <Headphones className="text-blue-600 flex-shrink-0" size={32} />
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Commandes assistées
+              </h2>
+            </div>
+            <div className="bg-white rounded-lg shadow-md p-8 border-l-4 border-blue-600">
+              <p className="text-lg text-gray-700 mb-4 leading-relaxed">
+                Vous n'avez pas de carte de crédit ou besoin d'aide pour acheter des articles sur <span className="font-semibold">Amazon, Shein, Temu ou d'autres plateformes en ligne</span> ? 
+                Nous vous couvrons !
+              </p>
+              <div className="space-y-3">
+                <p className="text-gray-700">
+                  <span className="font-semibold text-blue-600">Notre service d'achat personnel</span> vous permet de :
+                </p>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Demander n'importe quel produit de vos magasins en ligne préférés</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Nous gérons l'achat avec notre carte de crédit</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Expédition directe à notre entrepôt</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Nous transférons ensuite vos articles en Haïti à des tarifs compétitifs</span>
+                  </li>
+                </ul>
+              </div>
+              <a
+                href="https://wa.me/50932836938"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-6 bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+              >
+                <MessageCircle size={20} />
+                Nous contacter sur WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Grille Tarifaire - PRICING GRID */}
+      <section id="pricing-grid" className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Grille Tarifaire
+            </h2>
+            <p className="text-lg text-gray-600">
+              Voici nos frais d’assistance pour vos commandes AliExpress, Amazon, Shein, Temu, etc.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white rounded-xl shadow-md">
+              <thead>
+                <tr>
+                  <th className="px-6 py-4 text-left text-lg font-bold text-blue-700">Prix du produit</th>
+                  <th className="px-6 py-4 text-left text-lg font-bold text-blue-700">Frais d’assistance</th>
+                  <th className="px-6 py-4 text-left text-lg font-bold text-blue-700">Total à payer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[10, 49, 50, 99, 100, 199, 200, 300].map((base, i) => {
+                  const next = i % 2 === 0 ? base : base + 1;
+                  const breakdown = require("@/app/utils/pricing").getPriceBreakdown(next);
+                  return (
+                    <tr key={i} className="border-b last:border-0">
+                      <td className="px-6 py-4 text-gray-900 font-semibold">${next} $</td>
+                      <td className="px-6 py-4 text-gray-700">{breakdown.feeType} ({breakdown.fee.toFixed(2)} $)</td>
+                      <td className="px-6 py-4 text-blue-700 font-bold">{breakdown.total.toFixed(2)} $</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-8 text-center text-gray-600 text-sm">
+            <p>Les frais incluent l’achat, la gestion, l’expédition vers Haïti et la livraison à Champin.</p>
+            <p>Pour un devis précis, contactez-nous sur WhatsApp.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Nos produits - SECTION */}
       <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -339,138 +433,6 @@ export default function Home() {
             >
               Voir tous les produits
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Commandes Assistées Section */}
-      <section className="py-16 sm:py-24 bg-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
-              <Headphones className="text-blue-600 flex-shrink-0" size={32} />
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                Commandes assistées
-              </h2>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-8 border-l-4 border-blue-600">
-              <p className="text-lg text-gray-700 mb-4 leading-relaxed">
-                Vous n'avez pas de carte de crédit ou besoin d'aide pour acheter des articles sur <span className="font-semibold">Amazon, Shein, Temu ou d'autres plateformes en ligne</span> ? 
-                Nous vous couvrons !
-              </p>
-              <div className="space-y-3">
-                <p className="text-gray-700">
-                  <span className="font-semibold text-blue-600">Notre service d'achat personnel</span> vous permet de :
-                </p>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-3">
-                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
-                    <span>Demander n'importe quel produit de vos magasins en ligne préférés</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
-                    <span>Nous gérons l'achat avec notre carte de crédit</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
-                    <span>Expédition directe à notre entrepôt</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
-                    <span>Nous transférons ensuite vos articles en Haïti à des tarifs compétitifs</span>
-                  </li>
-                </ul>
-              </div>
-              <a
-                href="https://wa.me/50932836938"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-6 bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
-              >
-                <MessageCircle size={20} />
-                Nous contacter sur WhatsApp
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-16 sm:py-24 bg-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Questions Fréquemment Posées
-            </h2>
-            <p className="text-lg text-gray-600">
-              Trouvez les réponses aux questions les plus courantes
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {/* FAQ Item 1 */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-              <button
-                className="w-full px-6 py-4 sm:px-8 sm:py-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 text-left">
-                  Combien de temps dure le shipping ?
-                </h3>
-                <ChevronDown size={24} className="text-blue-600 flex-shrink-0 ml-4" />
-              </button>
-              <div className="px-6 py-4 sm:px-8 sm:py-5 bg-white border-t border-gray-200">
-                <p className="text-gray-700 text-lg">
-                  Nos délais sont rapides, entre <span className="font-semibold">3 à 5 jours depuis les USA</span>. Nous nous engageons à livrer vos commandes dans les meilleurs délais possibles.
-                </p>
-              </div>
-            </div>
-            {/* FAQ Item 2 */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-              <button
-                className="w-full px-6 py-4 sm:px-8 sm:py-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 text-left">
-                  Puis-je payer en Gourdes ou en Dollars ?
-                </h3>
-                <ChevronDown size={24} className="text-blue-600 flex-shrink-0 ml-4" />
-              </button>
-              <div className="px-6 py-4 sm:px-8 sm:py-5 bg-white border-t border-gray-200">
-                <p className="text-gray-700 text-lg">
-                  <span className="font-semibold">Nous acceptons les deux devises</span> (Gourdes et Dollars) pour vous faciliter la vie. Contactez-nous sur WhatsApp pour connaître les tarifs actuels et discuter des modalités de paiement.
-                </p>
-              </div>
-            </div>
-            {/* FAQ Item 3 */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-              <button
-                className="w-full px-6 py-4 sm:px-8 sm:py-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 text-left">
-                  Où récupère-je mon colis ?
-                </h3>
-                <ChevronDown size={24} className="text-blue-600 flex-shrink-0 ml-4" />
-              </button>
-              <div className="px-6 py-4 sm:px-8 sm:py-5 bg-white border-t border-gray-200">
-                <p className="text-gray-700 text-lg">
-                  Directement à notre boutique à <span className="font-semibold">Champin, Cap-Haïtien</span> (#J-123). Vous pouvez vous présenter à notre adresse durant nos horaires d'ouverture (Lun-Sam: 9h - 18h) ou nous contacter pour organiser un rendez-vous.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="text-gray-700 text-lg mb-4">
-              Vous avez d'autres questions ?
-            </p>
-            <a
-              href="https://wa.me/50932836938"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 justify-center"
-            >
-              <MessageCircle size={20} />
-              Nous contacter sur WhatsApp
-            </a>
           </div>
         </div>
       </section>
