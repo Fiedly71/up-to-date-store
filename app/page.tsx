@@ -138,7 +138,7 @@ export default function Home() {
       {/* AliExpress Search - MISE EN AVANT */}
       <section className="w-full bg-gradient-to-r from-blue-700 to-purple-700 py-16 px-4 text-white flex flex-col items-center mb-12 shadow-2xl border-b-4 border-purple-300">
         <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-6 drop-shadow-xl">Commandez sur AliExpress avec nous</h1>
-        <p className="text-lg md:text-xl text-center mb-8 max-w-2xl">Trouvez n'importe quel produit sur AliExpress, envoyez-nous le lien ou la référence, et nous nous occupons de tout ! Paiement local, livraison rapide à Champin.</p>
+        <p className="text-lg md:text-xl text-center mb-8 max-w-2xl">Trouvez n'importe quel produit sur AliExpress, envoyez-nous le lien ou la référence, et nous nous occupons de tout ! <span className="font-bold">Paiement local (MonCash, cash, carte)</span>, livraison rapide à Champin.</p>
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 w-full max-w-xl mx-auto">
           <input
             type="text"
@@ -147,6 +147,16 @@ export default function Home() {
             placeholder="Recherchez un produit AliExpress..."
             className="flex-1 px-6 py-4 rounded-xl border-2 border-white focus:border-purple-400 text-lg text-blue-900 bg-white placeholder-gray-400 shadow"
           />
+          {/* Recherche par défaut */}
+          {!productQuery && (
+            <button
+              type="button"
+              className="px-6 py-3 rounded-xl bg-white text-blue-700 font-bold border border-purple-300 shadow hover:bg-purple-50 transition-all"
+              onClick={() => setProductQuery('smartphone')}
+            >
+              Exemple : smartphone
+            </button>
+          )}
           <button type="submit" className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-lg shadow hover:from-purple-700 hover:to-blue-700 transition-all flex items-center gap-2">
             <Search size={22} /> Rechercher
           </button>
