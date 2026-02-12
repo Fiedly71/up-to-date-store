@@ -37,27 +37,11 @@ export default function Home() {
   // AliExpress Search Handler
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSearchResults([]);
-    try {
-      const response = await fetch(
-        `https://ali-express1.p.rapidapi.com/search?query=${encodeURIComponent(productQuery)}`,
-        {
-          method: "GET",
-          headers: {
-            "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-            "X-RapidAPI-Host": "ali-express1.p.rapidapi.com",
-          } as HeadersInit,
-        }
-      );
-      const data = await response.json();
-      setSearchResults(data.docs || []);
-    } catch (err) {
-      setError("Erreur lors de la recherche. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
+    if (!productQuery.trim()) {
+      setError("Veuillez entrer un mot-clé ou un lien AliExpress.");
+      return;
     }
+    window.location.href = `/produits?search=${encodeURIComponent(productQuery)}`;
   };
 
   const services = [

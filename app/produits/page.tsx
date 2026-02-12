@@ -10,6 +10,15 @@ import { products as allProducts } from "../data/products";
 
 export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Recherche initiale depuis l'URL (query param)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const search = params.get('search');
+      if (search) setSearchQuery(search);
+    }
+  }, []);
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
   
   // 1. ON PLACE LE HOOK ICI (à l'intérieur de la fonction)

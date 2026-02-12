@@ -26,11 +26,26 @@ export default function Navbar(): React.ReactElement {
       if (!ignore) {
         setUser(data.user);
         setLoading(false);
+        // Redirection automatique si déjà connecté
+        if (data.user) {
+          if (data.user.email?.endsWith("@admin.com")) {
+            if (window.location.pathname !== "/admin") window.location.href = "/admin";
+          } else {
+            if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
+          }
+        }
       }
     });
     // Listen to auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        if (session.user.email?.endsWith("@admin.com")) {
+          if (window.location.pathname !== "/admin") window.location.href = "/admin";
+        } else {
+          if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
+        }
+      }
     });
     return () => {
       ignore = true;
