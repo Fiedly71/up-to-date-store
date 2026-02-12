@@ -441,12 +441,56 @@ export default function Home() {
 
       {/* Avis Clients */}
       <section className="py-16 sm:py-24 bg-gradient-to-b from-blue-50 to-gray-50">
-        {/* ...existing code... */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-extrabold text-blue-900 mb-4 tracking-tight">Avis Clients</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Découvrez ce que nos clients pensent de notre service.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center">
+              <Star className="text-yellow-400 mb-2" size={32} />
+              <p className="text-gray-700 text-lg mb-4">Service rapide et fiable, j'ai reçu mon colis en 4 jours !</p>
+              <div className="font-bold text-blue-900">Jean, Cap-Haïtien</div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center">
+              <Star className="text-yellow-400 mb-2" size={32} />
+              <p className="text-gray-700 text-lg mb-4">Paiement facile avec MonCash, très satisfait !</p>
+              <div className="font-bold text-blue-900">Marie, Champin</div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col items-center">
+              <Star className="text-yellow-400 mb-2" size={32} />
+              <p className="text-gray-700 text-lg mb-4">Support WhatsApp très réactif, je recommande.</p>
+              <div className="font-bold text-blue-900">David, Limbé</div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-16 sm:py-20">
-        {/* ...existing code... */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2">Up-to-date Electronic Store</h3>
+              <p className="text-gray-400">Champin, Cap-Haïtien</p>
+              <p className="text-gray-400">Ouvert Lun-Sam: 9h - 18h</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="https://facebook.com/up-to-date-store" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-300">
+                <Facebook size={28} />
+              </a>
+              <a href="https://instagram.com/up-to-date-store" target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-300">
+                <Instagram size={28} />
+              </a>
+              <a href="https://wa.me/50932836938" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-300">
+                <MessageCircle size={28} />
+              </a>
+            </div>
+          </div>
+          <div className="mt-8 text-center text-gray-500 text-sm">
+            &copy; {new Date().getFullYear()} Up-to-date Electronic Store. Tous droits réservés.
+          </div>
+        </div>
       </footer>
     </div>
   );
