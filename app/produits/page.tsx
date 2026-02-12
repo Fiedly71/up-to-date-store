@@ -8,7 +8,7 @@ import { useCart } from '../context/CartContext'; // Import correct
 
 import { products as allProducts } from "../data/products";
 
-const export default function Produits() {
+export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
   
