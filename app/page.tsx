@@ -134,102 +134,120 @@ export default function Home() {
         </div>
       </section>
 
+
       {/* AliExpress Search - SECOND SECTION */}
       <section className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-10 px-4 text-white flex flex-col items-center mb-8">
+        {/* ...existing code... */}
         <h1 className="text-3xl md:text-5xl font-extrabold text-center mb-4 drop-shadow-lg">
           Tout AliExpress est ici. Commandez en toute sécurité.
         </h1>
-        <p className="text-lg md:text-2xl text-center mb-8 max-w-2xl">
-          Trouvez vos produits, payez localement à Champin ou via MonCash, et récupérez votre colis sans tracas.
-        </p>
-        <form
-          className="w-full max-w-xl flex flex-col sm:flex-row gap-2 items-center justify-center mx-auto"
-          onSubmit={handleSearch}
-        >
-          <input
-            type="text"
-            className="flex-1 w-full sm:w-auto px-4 py-3 rounded-l-lg text-gray-900 focus:outline-none placeholder-gray-400 border border-gray-200 focus:ring-2 focus:ring-orange-400"
-            placeholder="Collez un lien AliExpress ou tapez un produit..."
-            value={productQuery}
-            onChange={e => setProductQuery(e.target.value)}
-            required
-            style={{ minWidth: 0 }}
-          />
-          <button
-            type="submit"
-            className={`flex items-center justify-center bg-[#FF4747] hover:bg-[#e63b3b] px-6 py-3 rounded-r-lg font-bold text-white transition w-full sm:w-auto ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={loading}
-            style={{ minWidth: "48px" }}
-          >
-            <Search className="mr-2" size={20} />
-            <span className="hidden sm:inline">{loading ? "Recherche..." : "Rechercher"}</span>
-          </button>
-        </form>
-        {/* Quick Search Category Buttons */}
-        <div className="flex flex-wrap gap-2 mt-4 justify-center">
-          {[
-            { label: "Solar", query: "solar" },
-            { label: "Inverters", query: "inverter" },
-            { label: "Smartwatches", query: "smartwatch" },
-            { label: "Phones", query: "phone" },
-          ].map(cat => (
-            <button
-              key={cat.label}
-              className={`px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow hover:from-blue-700 hover:to-purple-700 transition ${loading && productQuery === cat.query ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={() => {
-                setProductQuery(cat.query);
-                setLoading(true);
-                setTimeout(() => handleSearch(), 0);
-              }}
-              type="button"
-              disabled={loading && productQuery === cat.query}
-            >
-              {loading && productQuery === cat.query ? 'Chargement...' : cat.label}
-            </button>
-          ))}
-        </div>
-        <a
-          href="#pricing-grid"
-          className="mt-6 inline-block bg-white text-blue-700 font-bold px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition"
-        >
-          Voir la grille tarifaire ↓
-        </a>
-        {/* Search Results */}
-        {error && (
-          <div className="mt-6 text-red-200 font-semibold">{error}</div>
-        )}
+        {/* ...existing code... */}
         {searchResults.length > 0 && (
           <div className="mt-8 w-full max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {searchResults.map((item, idx) => {
-              const basePrice = parseFloat(item.sale_price || item.original_price || "0");
-              const finalPrice = calculateFinalPrice(basePrice);
-              return (
-                <div key={idx} className="bg-white rounded-lg shadow p-4 text-gray-900 flex flex-col">
-                  <div className="mb-3 w-full h-40 flex items-center justify-center overflow-hidden rounded">
-                    {item.product_main_image_url ? (
-                      <img src={item.product_main_image_url} alt={item.product_title || item.title} className="object-contain w-full h-full" />
-                    ) : (
-                      <div className="bg-gray-200 w-full h-full flex items-center justify-center text-gray-500">No Image</div>
-                    )}
-                  </div>
-                  <div className="mb-2 font-bold text-lg truncate">{item.product_title || item.title}</div>
-                  <div className="mb-2 text-sm text-gray-700">
-                    Prix original: <span className="line-through text-red-500">${basePrice.toFixed(2)}</span>
-                  </div>
-                  <div className="mb-2 text-sm text-blue-700 font-semibold">
-                    Votre prix final: <span className="text-green-600">${finalPrice.toFixed(2)}</span>
-                  </div>
-                  <a
-                    href={`/product/${item.product_id || item.id}`}
-                    className="mt-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-center transition"
-                  >
-                    Voir Détails
-                  </a>
-                </div>
-              );
-            })}
+            {/* ...existing code... */}
           </div>
         )}
+      </section>
+
+      {/* Nos produits - SECTION (4 produits max) */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-50">
+        {/* ...existing code for produits... */}
+      </section>
+
+      {/* Commandes Assistées Section */}
+      <section className="py-16 sm:py-24 bg-blue-50">
+        {/* ...existing code for commandes assistées... */}
+      </section>
+
+
+      {/* Grille Tarifaire - PRICING GRID */}
+      <section id="pricing-grid" className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-extrabold text-blue-900 mb-4 tracking-tight">Grille Tarifaire</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Voici nos frais d’assistance pour vos commandes AliExpress, Amazon, Shein, Temu, etc.</p>
+          </div>
+          <div className="overflow-x-auto rounded-2xl shadow-xl border border-blue-100 bg-white">
+            <table className="min-w-full text-base">
+              <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
+                <tr>
+                  <th className="px-8 py-5 text-left font-bold text-blue-700 text-lg">Prix du produit</th>
+                  <th className="px-8 py-5 text-left font-bold text-blue-700 text-lg">Frais d’assistance</th>
+                  <th className="px-8 py-5 text-left font-bold text-blue-700 text-lg">Total à payer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: '0$ - 49$', value: 49 },
+                  { label: '50$ - 99$', value: 99 },
+                  { label: '100$ - 199$', value: 199 },
+                  { label: '200$ et plus', value: 250 },
+                ].map((row, i) => {
+                  const breakdown = require("@/app/utils/pricing").getPriceBreakdown(row.value);
+                  return (
+                    <tr key={i} className="border-b last:border-0 hover:bg-blue-50/40 transition">
+                      <td className="px-8 py-5 text-gray-900 font-semibold">{row.label}</td>
+                      <td className="px-8 py-5 text-gray-700">{breakdown.feeType} <span className="font-bold text-blue-700">({breakdown.fee.toFixed(2)} $)</span></td>
+                      <td className="px-8 py-5 text-blue-700 font-bold text-lg">{breakdown.total.toFixed(2)} $</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-8 text-center text-gray-600 text-base">
+            <p className="mb-1">Les frais incluent uniquement l’achat du produit sur la plateforme choisie.</p>
+            <p>Pour un devis précis, contactez-nous sur WhatsApp.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section - Questions Fréquemment Posées */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-slate-100 to-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-extrabold text-purple-900 mb-4 tracking-tight">Questions Fréquemment Posées</h2>
+            <p className="text-lg text-gray-600 max-w-xl mx-auto">Trouvez les réponses aux questions les plus courantes sur nos services, paiements et livraisons.</p>
+          </div>
+          <div className="space-y-6">
+            {/* FAQ Item 1 */}
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md hover:shadow-lg transition-shadow">
+              <button className="w-full px-8 py-6 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors rounded-t-2xl">
+                <h3 className="text-xl font-semibold text-purple-900 text-left">Combien de temps dure le shipping ?</h3>
+                <ChevronDown size={28} className="text-purple-600 flex-shrink-0 ml-4" />
+              </button>
+              <div className="px-8 py-6 bg-white border-t border-purple-100 rounded-b-2xl">
+                <p className="text-gray-700 text-lg">Nos délais sont rapides, entre <span className="font-semibold">3 à 5 jours depuis les USA</span>. Nous nous engageons à livrer vos commandes dans les meilleurs délais possibles.</p>
+              </div>
+            </div>
+            {/* FAQ Item 2 */}
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md hover:shadow-lg transition-shadow">
+              <button className="w-full px-8 py-6 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors rounded-t-2xl">
+                <h3 className="text-xl font-semibold text-purple-900 text-left">Puis-je payer en Gourdes ou en Dollars ?</h3>
+                <ChevronDown size={28} className="text-purple-600 flex-shrink-0 ml-4" />
+              </button>
+              <div className="px-8 py-6 bg-white border-t border-purple-100 rounded-b-2xl">
+                <p className="text-gray-700 text-lg"><span className="font-semibold">Nous acceptons les deux devises</span> (Gourdes et Dollars) pour vous faciliter la vie. Contactez-nous sur WhatsApp pour connaître les tarifs actuels et discuter des modalités de paiement.</p>
+              </div>
+            </div>
+            {/* FAQ Item 3 */}
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md hover:shadow-lg transition-shadow">
+              <button className="w-full px-8 py-6 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors rounded-t-2xl">
+                <h3 className="text-xl font-semibold text-purple-900 text-left">Où récupère-je mon colis ?</h3>
+                <ChevronDown size={28} className="text-purple-600 flex-shrink-0 ml-4" />
+              </button>
+              <div className="px-8 py-6 bg-white border-t border-purple-100 rounded-b-2xl">
+                <p className="text-gray-700 text-lg">Directement à notre boutique à <span className="font-semibold">Champin, Cap-Haïtien</span> (#J-123). Vous pouvez vous présenter à notre adresse durant nos horaires d'ouverture (Lun-Sam: 9h - 18h) ou nous contacter pour organiser un rendez-vous.</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-14 text-center">
+            <p className="text-gray-700 text-lg mb-4">Vous avez d'autres questions ?</p>
+            <a href="https://wa.me/50932836938" target="_blank" rel="noopener noreferrer" className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-10 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-3 justify-center">
+              <MessageCircle size={24} /> Nous contacter sur WhatsApp
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* Commandes Assistées Section */}
