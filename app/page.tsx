@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
+
 import Navbar from "@/app/components/Navbar";
+import PriceCalculator from "./components/PriceCalculator";
 import { Search, Truck, ShoppingCart } from "lucide-react";
 import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap } from "lucide-react";
 import { calculateFinalPrice } from "@/app/utils/pricing";
@@ -199,6 +201,18 @@ export default function Home() {
             <p className="mb-1">Les frais incluent uniquement l’achat du produit sur la plateforme choisie.</p>
             <p>Pour un devis précis, contactez-nous sur WhatsApp.</p>
           </div>
+        </div>
+      </section>
+
+
+      {/* Calculateur de Prix - INTERACTIF */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-purple-50 to-blue-50">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 premium-card rounded-2xl shadow-2xl border border-blue-100">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-extrabold text-blue-900 mb-2 tracking-tight">Calculez votre prix final</h2>
+            <p className="text-lg text-gray-600">Simulez le coût total d'un produit importé (frais inclus)</p>
+          </div>
+          <PriceCalculator />
         </div>
       </section>
 
