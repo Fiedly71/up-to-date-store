@@ -6,23 +6,16 @@ import { ShoppingCart, MessageCircle, Search, Sparkles } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { useCart } from '../context/CartContext'; // Import correct
 
-const newArrivals = [
-  { id: 101, name: "Sunset Light", image: "/Sunset light.jpg" },
-  { id: 102, name: "Smart Watch", image: "/Smart watch.jpg" },
-  { id: 103, name: "Smart Projector", image: "/Smart Projector.jpg" },
-  { id: 104, name: "Phone Light", image: "/Phone Light.jpg" },
-  { id: 105, name: "LED Light", image: "/Led2.jpg" },
-  { id: 106, name: "Headphones/3", image: "/hp.jpg" }, // Correction du nom
-];
+import { products as allProducts } from "../data/products";
 
-export default function Produits() {
+const export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
   
   // 1. ON PLACE LE HOOK ICI (à l'intérieur de la fonction)
   const { addToCart, removeFromCart } = useCart();
 
-  const filteredProducts = newArrivals.filter((product) =>
+  const filteredProducts = allProducts.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
