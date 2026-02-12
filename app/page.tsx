@@ -1,16 +1,36 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/app/components/Navbar";
-import { Search, Truck, ShoppingCart, Zap } from "lucide-react";
+import { Search, Truck, ShoppingCart } from "lucide-react";
+import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap } from "lucide-react";
 import { calculateFinalPrice } from "@/app/utils/pricing";
 import Link from "next/link";
 import { products as allProducts } from "@/app/data/products";
+import { useCart } from '@/app/context/CartContext';
 
 export default function Home() {
   const [productQuery, setProductQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState("");
+
+  const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
+
+  // Synchronisation des quantités
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("selected-quantities");
+      if (saved) setProductQuantities(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("selected-quantities", JSON.stringify(productQuantities));
+    } catch {}
+  }, [productQuantities]);
+
+  const { addToCart, removeFromCart } = useCart();
 
   // AliExpress Search Handler
   const handleSearch = async (e?: React.FormEvent) => {
@@ -251,54 +271,422 @@ export default function Home() {
                   <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">Quantité</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          const current = productQuantities[product.id] || 0;
+                          const next = Math.max(0, current - 1);
+                          setProductQuantities({ ...productQuantities, [product.id]: next });
+                        }}
+                      >
+                        -
+                      </button>
+                      <div className="px-4 py-2 border border-gray-300 rounded-lg min-w-12 text-center font-semibold text-gray-900">
+                        {productQuantities[product.id] || 0}
+                      </div>
+                      <button
+                        type="button"
+                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          const current = productQuantities[product.id] || 0;
+                          const next = Math.min(99, current + 1);
+                          setProductQuantities({ ...productQuantities, [product.id]: next });
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-auto flex flex-col gap-2 w-full">
-                    <Link
-                      href={`/product/${product.id}`}
-                      className="premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md w-full hover:from-blue-700 hover:to-purple-700 transform hover:scale-105"
+                    <button
+                      onClick={() => {
+                        const quantity = productQuantities[product.id] || 0;
+                        if (quantity <= 0) return;
+                        removeFromCart(product.id);
+                        addToCart(product, quantity);
+                      }}
+                      disabled={productQuantities[product.id] === 0}
+                      className={`premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md w-full ${productQuantities[product.id] === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'}`}
                     >
-                      Voir Détails
-                    </Link>
+                      <ShoppingCart size={16} />
+                      <span>Ajouter au panier</span>
+                    </button>
+                    {productQuantities[product.id] > 0 && (
+                      <button
+                        onClick={() => {
+                          removeFromCart(product.id);
+                          setProductQuantities({ ...productQuantities, [product.id]: 0 });
+                        }}
+                        className="px-2 py-2 rounded-xl border-2 border-red-600 text-red-600 font-semibold text-xs hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center gap-1 self-stretch"
+                      >
+                        Supprimer
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          <div className="text-center">
+            <Link
+              href="/produits"
+              className="premium-button inline-block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105"
+            >
+              Voir tous les produits
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Grille des Tarifs - THIRD SECTION */}
-      <section id="pricing-grid" className="py-16 sm:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <h2 className="text-4xl sm:text-5xl font-extrabold mb-8 text-center text-blue-700">
-            Grille des Tarifs
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-              <span className="text-2xl font-bold text-blue-600 mb-2">$0 - $50</span>
-              <span className="text-3xl font-extrabold text-gray-900 mb-1">$8</span>
-              <span className="text-gray-500">Frais fixes</span>
+      {/* Commandes Assistées Section */}
+      <section className="py-16 sm:py-24 bg-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <Headphones className="text-blue-600 flex-shrink-0" size={32} />
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Commandes assistées
+              </h2>
             </div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-              <span className="text-2xl font-bold text-blue-600 mb-2">$50 - $100</span>
-              <span className="text-3xl font-extrabold text-gray-900 mb-1">$12</span>
-              <span className="text-gray-500">Frais fixes</span>
+            <div className="bg-white rounded-lg shadow-md p-8 border-l-4 border-blue-600">
+              <p className="text-lg text-gray-700 mb-4 leading-relaxed">
+                Vous n'avez pas de carte de crédit ou besoin d'aide pour acheter des articles sur <span className="font-semibold">Amazon, Shein, Temu ou d'autres plateformes en ligne</span> ? 
+                Nous vous couvrons !
+              </p>
+              <div className="space-y-3">
+                <p className="text-gray-700">
+                  <span className="font-semibold text-blue-600">Notre service d'achat personnel</span> vous permet de :
+                </p>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Demander n'importe quel produit de vos magasins en ligne préférés</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Nous gérons l'achat avec notre carte de crédit</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Expédition directe à notre entrepôt</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <ChevronRight className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                    <span>Nous transférons ensuite vos articles en Haïti à des tarifs compétitifs</span>
+                  </li>
+                </ul>
+              </div>
+              <a
+                href="https://wa.me/50932836938"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-6 bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
+              >
+                <MessageCircle size={20} />
+                Nous contacter sur WhatsApp
+              </a>
             </div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-              <span className="text-2xl font-bold text-blue-600 mb-2">$100 - $200</span>
-              <span className="text-3xl font-extrabold text-gray-900 mb-1">$20</span>
-              <span className="text-gray-500">Frais fixes</span>
-            </div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center border-t-4 border-blue-500">
-              <span className="text-2xl font-bold text-blue-600 mb-2">$200+</span>
-              <span className="text-3xl font-extrabold text-gray-900 mb-1">20%</span>
-              <span className="text-gray-500">du prix total</span>
-            </div>
-          </div>
-          <div className="text-center text-blue-700 font-semibold text-lg">
-            Paiement à Champin ou via <span className="font-bold text-orange-600">MonCash</span>
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 sm:py-24 bg-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Questions Fréquemment Posées
+            </h2>
+            <p className="text-lg text-gray-600">
+              Trouvez les réponses aux questions les plus courantes
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* FAQ Item 1 */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+              <button
+                className="w-full px-6 py-4 sm:px-8 sm:py-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 text-left">
+                  Combien de temps dure le shipping ?
+                </h3>
+                <ChevronDown size={24} className="text-blue-600 flex-shrink-0 ml-4" />
+              </button>
+              <div className="px-6 py-4 sm:px-8 sm:py-5 bg-white border-t border-gray-200">
+                <p className="text-gray-700 text-lg">
+                  Nos délais sont rapides, entre <span className="font-semibold">3 à 5 jours depuis les USA</span>. Nous nous engageons à livrer vos commandes dans les meilleurs délais possibles.
+                </p>
+              </div>
+            </div>
+            {/* FAQ Item 2 */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+              <button
+                className="w-full px-6 py-4 sm:px-8 sm:py-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 text-left">
+                  Puis-je payer en Gourdes ou en Dollars ?
+                </h3>
+                <ChevronDown size={24} className="text-blue-600 flex-shrink-0 ml-4" />
+              </button>
+              <div className="px-6 py-4 sm:px-8 sm:py-5 bg-white border-t border-gray-200">
+                <p className="text-gray-700 text-lg">
+                  <span className="font-semibold">Nous acceptons les deux devises</span> (Gourdes et Dollars) pour vous faciliter la vie. Contactez-nous sur WhatsApp pour connaître les tarifs actuels et discuter des modalités de paiement.
+                </p>
+              </div>
+            </div>
+            {/* FAQ Item 3 */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+              <button
+                className="w-full px-6 py-4 sm:px-8 sm:py-5 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 text-left">
+                  Où récupère-je mon colis ?
+                </h3>
+                <ChevronDown size={24} className="text-blue-600 flex-shrink-0 ml-4" />
+              </button>
+              <div className="px-6 py-4 sm:px-8 sm:py-5 bg-white border-t border-gray-200">
+                <p className="text-gray-700 text-lg">
+                  Directement à notre boutique à <span className="font-semibold">Champin, Cap-Haïtien</span> (#J-123). Vous pouvez vous présenter à notre adresse durant nos horaires d'ouverture (Lun-Sam: 9h - 18h) ou nous contacter pour organiser un rendez-vous.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-gray-700 text-lg mb-4">
+              Vous avez d'autres questions ?
+            </p>
+            <a
+              href="https://wa.me/50932836938"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 justify-center"
+            >
+              <MessageCircle size={20} />
+              Nous contacter sur WhatsApp
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Avis Clients Section */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-blue-50 to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Témoignages Clients
+            </h2>
+            <p className="text-lg text-gray-600">
+              Ce que nos clients disent de nous
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Testimonial 1 */}
+            <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow duration-300 flex flex-col">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} className="fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-700 text-lg mb-6 flex-grow italic">
+                "Produits de haute qualité et livraison plus rapide que prévu à Champin !"
+              </p>
+              <div>
+                <p className="font-bold text-gray-900">Jean-Baptiste Morissette</p>
+                <p className="text-gray-600 text-sm">Client vérifié</p>
+              </div>
+            </div>
+            {/* Testimonial 2 */}
+            <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow duration-300 flex flex-col">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} className="fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-700 text-lg mb-6 flex-grow italic">
+                "Le meilleur service de shipping USA au Cap. Très professionnel."
+              </p>
+              <div>
+                <p className="font-bold text-gray-900">Rose-Marie Delvilus</p>
+                <p className="text-gray-600 text-sm">Client vérifié</p>
+              </div>
+            </div>
+            {/* Testimonial 3 */}
+            <div className="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition-shadow duration-300 flex flex-col">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={20} className="fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-gray-700 text-lg mb-6 flex-grow italic">
+                "Mon projecteur est arrivé en parfait état. Je recommande vivement Up-to-date."
+              </p>
+              <div>
+                <p className="font-bold text-gray-900">Marc-Antoine Desroches</p>
+                <p className="text-gray-600 text-sm">Client vérifié</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-gray-700 text-lg mb-6">
+              Rejoignez des centaines de clients satisfaits
+            </p>
+            <a
+              href="https://wa.me/50932836938"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+              Commencer votre commande
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-300 py-16 sm:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Main Footer Content */}
+          <div className="grid md:grid-cols-4 gap-10 mb-12">
+            {/* Company Info */}
+            <div>
+              <h3 className="text-white font-bold text-lg mb-4">Up-to-date Electronic Store</h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Expédition rapide et fiable de produits électroniques de qualité vers Haïti.
+              </p>
+              <div className="flex gap-4">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-gray-800 hover:bg-blue-600 rounded-full flex items-center justify-center transition-colors"
+                  title="Facebook"
+                >
+                  <Facebook size={20} />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-gray-800 hover:bg-pink-600 rounded-full flex items-center justify-center transition-colors"
+                  title="Instagram"
+                >
+                  <Instagram size={20} />
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-white font-semibold text-lg mb-4">Liens Rapides</h4>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+                    Accueil
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/produits" className="text-gray-400 hover:text-white transition-colors">
+                    Boutique
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                    À Propos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                    Vie Privée
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors">
+                    Cookies
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+                    Conditions
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Hours */}
+            <div>
+              <h4 className="text-white font-semibold text-lg mb-4">Horaires d'Ouverture</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li className="flex items-start gap-2">
+                  <Clock size={16} className="flex-shrink-0 mt-0.5 text-orange-500" />
+                  <div>
+                    <p className="font-semibold text-white">Lun - Sam</p>
+                    <p>9h00 - 18h00</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock size={16} className="flex-shrink-0 mt-0.5 text-orange-500" />
+                  <div>
+                    <p className="font-semibold text-white">Dimanche</p>
+                    <p>Fermé</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="text-white font-semibold text-lg mb-4">Contact</h4>
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <MapPin size={18} className="flex-shrink-0 mt-1 text-orange-500" />
+                  <div>
+                    <p className="font-semibold text-white mb-1">Adresse</p>
+                    <p className="text-gray-400">#J-123, Champin</p>
+                    <p className="text-gray-400">Cap-Haïtien, Haïti</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MessageCircle size={18} className="flex-shrink-0 mt-1 text-green-500" />
+                  <div>
+                    <p className="font-semibold text-white mb-1">WhatsApp</p>
+                    <p className="text-gray-400">+509-3283-6938</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Footer */}
+          <div className="border-t border-gray-700 pt-8">
+            <div className="text-center text-sm text-gray-400">
+              <p>&copy; 2024 Up-to-date Electronic Store. Tous droits réservés.</p>
+              <p className="mt-2">
+                Conçu avec passion pour servir la communauté de Cap-Haïtien
+              </p>
+              <p className="mt-2">
+                Site réalisé par{' '}
+                <a
+                  href="https://gui-fiedly.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-200 font-semibold"
+                >
+                  GF Digital Studio
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
