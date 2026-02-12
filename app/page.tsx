@@ -469,26 +469,59 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
             <div>
-              <h3 className="text-2xl font-bold text-white mb-2">Up-to-date Electronic Store</h3>
-              <p className="text-gray-400">Champin, Cap-Haïtien</p>
-              <p className="text-gray-400">Ouvert Lun-Sam: 9h - 18h</p>
+              <h3 className="text-2xl font-bold text-white mb-4">Navigation</h3>
+              <ul className="space-y-2">
+                <li><Link href="/">Accueil</Link></li>
+                <li><Link href="/about">À propos</Link></li>
+                <li><Link href="/produits">Produits</Link></li>
+                <li><Link href="/panier">Panier</Link></li>
+                <li><Link href="/my-orders">Mes commandes</Link></li>
+                <li><Link href="/checkout">Checkout</Link></li>
+                <li><Link href="/restrictions">Restrictions</Link></li>
+                <li><Link href="/privacy">Confidentialité</Link></li>
+                <li><Link href="/terms">Conditions</Link></li>
+                <li><Link href="/cookies">Cookies</Link></li>
+                <li><Link href="/admin">Admin</Link></li>
+              </ul>
             </div>
-            <div className="flex items-center gap-4">
-              <a href="https://facebook.com/up-to-date-store" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-300">
-                <Facebook size={28} />
-              </a>
-              <a href="https://instagram.com/up-to-date-store" target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-300">
-                <Instagram size={28} />
-              </a>
-              <a href="https://wa.me/50932836938" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-300">
-                <MessageCircle size={28} />
-              </a>
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-4">Contact</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><span className="font-semibold text-white">Adresse:</span> Champin, Cap-Haïtien</li>
+                <li><span className="font-semibold text-white">WhatsApp:</span> <a href="https://wa.me/50932836938" className="underline" target="_blank" rel="noopener noreferrer">+509 32 83 6938</a></li>
+                <li><span className="font-semibold text-white">Email:</span> <a href="mailto:contact@up-to-date-store.com" className="underline">contact@up-to-date-store.com</a></li>
+                <li><span className="font-semibold text-white">Horaires:</span> Lun-Sam: 9h - 18h</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-4">Réseaux</h3>
+              <div className="flex items-center gap-4">
+                <a href="https://facebook.com/up-to-date-store" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-300">
+                  <Facebook size={28} />
+                </a>
+                <a href="https://instagram.com/up-to-date-store" target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-300">
+                  <Instagram size={28} />
+                </a>
+                <a href="https://wa.me/50932836938" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-300">
+                  <MessageCircle size={28} />
+                </a>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-4">Paiements acceptés</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>MonCash</li>
+                <li>Cash</li>
+                <li>Carte bancaire</li>
+              </ul>
             </div>
           </div>
           <div className="mt-8 text-center text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Up-to-date Electronic Store. Tous droits réservés.
+            &copy; 2026 Up-to-date Electronic Store. Tous droits réservés.<br />
+            <span className="text-gray-400">Site made by </span>
+            <a href="https://www.gf-digital-studio.space/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold">GF DIGITAL STUDIO</a>
           </div>
         </div>
       </footer>
