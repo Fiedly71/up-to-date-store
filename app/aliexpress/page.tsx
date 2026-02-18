@@ -1,49 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Filter, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
 
-interface AliExpressProduct {
-  product_id?: string;
-  product_title?: string;
-  product_main_image_url?: string;
-  app_sale_price?: string;
-  app_sale_price_currency?: string;
-  original_price?: string;
-  product_detail_url?: string;
-  evaluate_rate?: string;
-  total_order_num?: number;
+interface SearchProduct {
+  itemId: string;
+  title: string;
+  image: string;
+  price: number;
+  originalPrice?: number;
+  sales?: string;
+  url: string;
+}
+
+interface ProductDetails {
+  itemId: string;
+  title: string;
+  images: string[];
+  price: number;
+  originalPrice?: number;
+  currency: string;
+  available: boolean;
+  shipping?: string;
+  ratings?: number;
+  reviews?: number;
+  orders?: number;
+  url: string;
 }
 
 export default function AliExpressPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [products, setProducts] = useState<AliExpressProduct[]>([]);
+  const [productUrl, setProductUrl] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDetails | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState<"search" | "link">("search");
   const [hasSearched, setHasSearched] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<AliExpressProduct | null>(null);
 
-  // Popular search suggestions
-  const popularSearches = [
-    "iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch",
-    "USB-C cable", "Power bank", "Ring light", "Webcam"
-  ];
+  const popularSearches = ["iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch", "USB-C cable", "Power bank"];
 
-  // Read search query from URL on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const search = params.get('search');
-      if (search) {
-        setSearchQuery(search);
-        handleSearch(search);
-      }
-    }
-  }, []);
-
+  // Search products by keyword
   const handleSearch = async (query?: string) => {
     const searchTerm = query || searchQuery;
     if (!searchTerm.trim()) {
@@ -53,48 +54,149 @@ export default function AliExpressPage() {
 
     setLoading(true);
     setError("");
-    setHasSearched(true);
+    setSearchResults([]);
     setSelectedProduct(null);
+    setHasSearched(true);
 
     try {
-      const response = await fetch(`https://ali-express1.p.rapidapi.com/search?query=${encodeURIComponent(searchTerm)}`, {
+      const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_search_2?q=${encodeURIComponent(searchTerm)}&page=1`, {
         method: "GET",
         headers: {
           "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-          "X-RapidAPI-Host": "ali-express1.p.rapidapi.com",
-        } as HeadersInit,
+          "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
+        },
       });
 
       const data = await response.json();
-      setProducts(data.docs || []);
       
-      if (!data.docs || data.docs.length === 0) {
-        setError("Aucun produit trouvé. Essayez un autre mot-clé.");
+      if (data.message && data.message.includes("not subscribed")) {
+        setError("Erreur API. Veuillez vous abonner au plan sur RapidAPI.");
+        return;
       }
+
+      if (!data.result?.resultList || data.result.resultList.length === 0) {
+        setError("Aucun produit trouvé. Essayez un autre mot-clé.");
+        return;
+      }
+
+      const products: SearchProduct[] = data.result.resultList.map((item: any) => {
+        const product = item.item;
+        let price = 0;
+        if (product.sku?.def?.promotionPrice) {
+          price = parseFloat(product.sku.def.promotionPrice);
+        } else if (product.sku?.def?.price) {
+          price = parseFloat(product.sku.def.price);
+        }
+        
+        return {
+          itemId: product.itemId,
+          title: product.title,
+          image: product.image?.startsWith("//") ? `https:${product.image}` : product.image,
+          price: price,
+          originalPrice: product.sku?.def?.price ? parseFloat(product.sku.def.price) : undefined,
+          sales: product.sales,
+          url: `https://www.aliexpress.com/item/${product.itemId}.html`
+        };
+      });
+
+      setSearchResults(products);
     } catch (err) {
-      setError("Erreur lors de la recherche. Veuillez réessayer.");
-      setProducts([]);
+      console.error("API Error:", err);
+      setError("Erreur de connexion. Vérifiez votre connexion internet.");
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateTotalPrice = (price: string): { basePrice: number; fee: number; total: number } => {
-    const basePrice = parseFloat(price) || 0;
-    const breakdown = getPriceBreakdown(basePrice);
-    return {
-      basePrice,
-      fee: breakdown.fee,
-      total: breakdown.total
-    };
+  // Get product details by ID
+  const getProductDetails = async (itemId: string, url: string) => {
+    setLoadingDetails(true);
+    setError("");
+
+    try {
+      const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_detail_2?itemId=${itemId}`, {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
+          "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
+        },
+      });
+
+      const data = await response.json();
+      
+      if (!data.result || !data.result.item) {
+        setError("Impossible de charger les détails du produit.");
+        return;
+      }
+
+      const item = data.result.item;
+      
+      let price = 0;
+      if (item.sku?.def?.promotionPrice) {
+        price = parseFloat(item.sku.def.promotionPrice);
+      } else if (item.sku?.def?.price) {
+        price = parseFloat(item.sku.def.price);
+      } else if (item.price) {
+        price = parseFloat(item.price);
+      }
+
+      const productDetails: ProductDetails = {
+        itemId: itemId,
+        title: item.title || "Produit AliExpress",
+        images: item.images || [],
+        price: price,
+        originalPrice: item.sku?.def?.originalPrice ? parseFloat(item.sku.def.originalPrice) : undefined,
+        currency: data.result.settings?.currency || "USD",
+        available: item.available !== false,
+        ratings: item.averageStarRate,
+        reviews: item.totalReviews,
+        orders: item.sales,
+        url: url
+      };
+
+      setSelectedProduct(productDetails);
+    } catch (err) {
+      console.error("API Error:", err);
+      setError("Erreur de connexion.");
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
-  const handleOrderProduct = (product: AliExpressProduct) => {
-    setSelectedProduct(product);
+  // Extract item ID from AliExpress URL
+  const extractItemId = (url: string): string | null => {
+    const patterns = [
+      /aliexpress\.[a-z]+\/item\/(\d+)/i,
+      /item\/(\d+)\.html/i,
+      /\/(\d{10,20})(?:\.html|\?|$)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) return match[1];
+    }
+    return null;
   };
 
-  const closeModal = () => {
-    setSelectedProduct(null);
+  // Handle link paste
+  const handleLinkSubmit = async () => {
+    if (!productUrl.trim()) {
+      setError("Veuillez coller un lien AliExpress.");
+      return;
+    }
+
+    const itemId = extractItemId(productUrl);
+    if (!itemId) {
+      setError("Lien invalide. Copiez le lien complet depuis AliExpress.");
+      return;
+    }
+
+    await getProductDetails(itemId, productUrl);
+  };
+
+  const calculateTotalPrice = (price: number) => {
+    const breakdown = getPriceBreakdown(price);
+    return { basePrice: price, fee: breakdown.fee, total: breakdown.total };
   };
 
   return (
@@ -125,49 +227,106 @@ export default function AliExpressPage() {
             </h1>
           </div>
           <p className="text-lg sm:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Trouvez n'importe quel produit sur AliExpress et nous nous occupons de tout ! 
+            Trouvez n'importe quel produit et nous nous occupons de tout !
             <span className="block mt-2 font-semibold">Paiement local • Livraison à Champin • Service complet</span>
           </p>
 
-          {/* Search Bar */}
-          <form 
-            onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
-            className="max-w-2xl mx-auto"
-          >
-            <div className="relative flex gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Recherchez un produit AliExpress..."
-                  className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-white/30 focus:border-white text-lg text-gray-900 bg-white placeholder-gray-400 shadow-xl focus:outline-none focus:ring-4 focus:ring-white/30"
-                />
-              </div>
+          {/* Mode Toggle */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-1 flex gap-1">
               <button
-                type="submit"
-                disabled={loading}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center gap-2"
+                onClick={() => { setMode("search"); setError(""); setSelectedProduct(null); }}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${mode === "search" ? "bg-white text-orange-600 shadow-md" : "text-white hover:bg-white/10"}`}
               >
-                <Search size={22} />
-                <span className="hidden sm:inline">Rechercher</span>
+                <Search size={18} className="inline mr-2" />
+                Rechercher
+              </button>
+              <button
+                onClick={() => { setMode("link"); setError(""); setSearchResults([]); }}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${mode === "link" ? "bg-white text-orange-600 shadow-md" : "text-white hover:bg-white/10"}`}
+              >
+                <Link2 size={18} className="inline mr-2" />
+                Coller un lien
               </button>
             </div>
-          </form>
-
-          {/* Popular Searches */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {popularSearches.map((term, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setSearchQuery(term); handleSearch(term); }}
-                className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium hover:bg-white/30 transition-all duration-300"
-              >
-                {term}
-              </button>
-            ))}
           </div>
+
+          {/* Search Form */}
+          {mode === "search" && (
+            <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="max-w-2xl mx-auto">
+              <div className="relative flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Recherchez un produit (ex: écouteurs bluetooth)..."
+                    className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-white/30 focus:border-white text-lg text-gray-900 bg-white placeholder-gray-400 shadow-xl focus:outline-none focus:ring-4 focus:ring-white/30"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <Search size={22} />
+                      <span>Rechercher</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              {/* Popular Searches */}
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {popularSearches.map((term, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => { setSearchQuery(term); handleSearch(term); }}
+                    className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium hover:bg-white/30 transition-all"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </form>
+          )}
+
+          {/* Link Form */}
+          {mode === "link" && (
+            <form onSubmit={(e) => { e.preventDefault(); handleLinkSubmit(); }} className="max-w-2xl mx-auto">
+              <div className="relative flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
+                  <input
+                    type="text"
+                    value={productUrl}
+                    onChange={(e) => setProductUrl(e.target.value)}
+                    placeholder="Collez le lien AliExpress ici..."
+                    className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-white/30 focus:border-white text-lg text-gray-900 bg-white placeholder-gray-400 shadow-xl focus:outline-none focus:ring-4 focus:ring-white/30"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loadingDetails}
+                  className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loadingDetails ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <CheckCircle size={22} />
+                      <span>Vérifier</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
 
@@ -178,9 +337,9 @@ export default function AliExpressPage() {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
             {[
               { step: "1", title: "Recherchez", desc: "Trouvez le produit souhaité" },
-              { step: "2", title: "Commandez", desc: "Cliquez sur 'Commander via Up-to-date'" },
-              { step: "3", title: "Payez", desc: "Payez en Gourdes ou via MonCash" },
-              { step: "4", title: "Recevez", desc: "Récupérez à Champin sous 3-5 jours" },
+              { step: "2", title: "Sélectionnez", desc: "Cliquez sur le produit" },
+              { step: "3", title: "Commandez", desc: "Contactez-nous via WhatsApp" },
+              { step: "4", title: "Recevez", desc: "Récupérez à Champin (7-15 jours)" },
             ].map((item, idx) => (
               <div key={idx} className="text-center">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold text-lg shadow-lg">
@@ -198,71 +357,72 @@ export default function AliExpressPage() {
       <section className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Loading State */}
-          {loading && (
+          {(loading || loadingDetails) && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-lg font-semibold text-gray-700">Recherche en cours sur AliExpress...</p>
+              <p className="text-lg font-semibold text-gray-700">
+                {loading ? "Recherche en cours..." : "Chargement du produit..."}
+              </p>
             </div>
           )}
 
           {/* Error State */}
-          {error && !loading && (
+          {error && !loading && !loadingDetails && (
             <div className="text-center py-12">
               <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package className="text-red-500" size={40} />
+                <AlertCircle className="text-red-500" size={40} />
               </div>
               <p className="text-lg font-semibold text-red-600 mb-4">{error}</p>
-              <p className="text-gray-600">Essayez avec d'autres mots-clés comme "écouteurs", "montre", "lumière LED"...</p>
             </div>
           )}
 
-          {/* Products Grid */}
-          {!loading && products.length > 0 && (
+          {/* Search Results Grid */}
+          {!loading && !loadingDetails && searchResults.length > 0 && !selectedProduct && (
             <>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  <span className="gradient-text">{products.length} produits trouvés</span>
+                  {searchResults.length} produits trouvés
                 </h2>
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product, idx) => {
-                  const priceInfo = calculateTotalPrice(product.app_sale_price || "0");
+                {searchResults.map((product, idx) => {
+                  const priceInfo = calculateTotalPrice(product.price);
                   return (
                     <div 
-                      key={product.product_id || idx}
-                      className="premium-card rounded-2xl overflow-hidden flex flex-col group"
+                      key={product.itemId || idx}
+                      className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col group hover:shadow-xl transition-shadow cursor-pointer"
+                      onClick={() => getProductDetails(product.itemId, product.url)}
                     >
                       {/* Product Image */}
                       <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                        {product.product_main_image_url && (
+                        {product.image && (
                           <img
-                            src={product.product_main_image_url}
-                            alt={product.product_title}
+                            src={product.image}
+                            alt={product.title}
                             className="object-contain w-full h-full group-hover:scale-110 transition-transform duration-500"
                           />
                         )}
-                        {/* AliExpress Badge */}
                         <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                           AliExpress
                         </div>
                       </div>
 
                       {/* Product Info */}
-                      <div className="p-4 flex flex-col flex-grow bg-white">
+                      <div className="p-4 flex flex-col flex-grow">
                         <h3 className="text-sm font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors min-h-[40px]">
-                          {product.product_title}
+                          {product.title}
                         </h3>
+                        
+                        {product.sales && (
+                          <p className="text-xs text-gray-500 mb-2">{product.sales} vendus</p>
+                        )}
                         
                         {/* Prices */}
                         <div className="mb-4 space-y-1">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xs text-gray-500">Prix AliExpress:</span>
-                            <span className="text-sm font-medium text-gray-700">${priceInfo.basePrice.toFixed(2)}</span>
-                          </div>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xs text-gray-500">+ Frais service:</span>
-                            <span className="text-sm font-medium text-orange-600">${priceInfo.fee.toFixed(2)}</span>
+                            <span className="text-xs text-gray-500">Prix:</span>
+                            <span className="text-sm font-medium text-gray-700">${product.price.toFixed(2)}</span>
                           </div>
                           <div className="flex items-baseline gap-2 pt-1 border-t border-gray-100">
                             <span className="text-sm font-bold text-gray-900">Total:</span>
@@ -270,25 +430,12 @@ export default function AliExpressPage() {
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="mt-auto flex flex-col gap-2">
-                          <button
-                            onClick={() => handleOrderProduct(product)}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-sm shadow-md hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
-                          >
-                            <ShoppingCart size={16} />
-                            Commander via Up-to-date
-                          </button>
-                          <a
-                            href={product.product_detail_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full py-2 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-xs hover:border-orange-500 hover:text-orange-500 transition-all duration-300 flex items-center justify-center gap-1"
-                          >
-                            <ExternalLink size={14} />
-                            Voir sur AliExpress
-                          </a>
-                        </div>
+                        <button
+                          className="mt-auto w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-sm shadow-md hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCart size={16} />
+                          Voir détails
+                        </button>
                       </div>
                     </div>
                   );
@@ -297,119 +444,147 @@ export default function AliExpressPage() {
             </>
           )}
 
+          {/* Selected Product Details */}
+          {!loading && !loadingDetails && selectedProduct && (
+            <div className="max-w-4xl mx-auto">
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="mb-6 text-purple-600 font-semibold hover:text-purple-800 flex items-center gap-2"
+              >
+                ← Retour aux résultats
+              </button>
+              
+              <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
+                  <div className="flex items-center gap-2 text-white">
+                    <CheckCircle size={20} />
+                    <span className="font-semibold">Produit trouvé sur AliExpress</span>
+                  </div>
+                </div>
+
+                <div className="p-6 sm:p-8">
+                  <div className="flex flex-col md:flex-row gap-8">
+                    <div className="md:w-1/2">
+                      <div className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-square">
+                        {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                          <img
+                            src={selectedProduct.images[0].startsWith("//") ? `https:${selectedProduct.images[0]}` : selectedProduct.images[0]}
+                            alt={selectedProduct.title}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="text-gray-300" size={80} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="md:w-1/2 flex flex-col">
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 leading-tight">
+                        {selectedProduct.title}
+                      </h2>
+
+                      <div className="flex flex-wrap gap-4 mb-6 text-sm text-gray-600">
+                        {selectedProduct.ratings && (
+                          <span className="flex items-center gap-1">⭐ {selectedProduct.ratings.toFixed(1)}</span>
+                        )}
+                        {selectedProduct.reviews && <span>{selectedProduct.reviews} avis</span>}
+                        {selectedProduct.orders && <span>{selectedProduct.orders}+ vendus</span>}
+                      </div>
+
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-5 mb-6">
+                        <h3 className="font-bold text-gray-900 mb-4">Détail du prix</h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Prix AliExpress</span>
+                            <span className="font-semibold text-lg">${selectedProduct.price.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Frais de service</span>
+                            <span className="font-semibold text-orange-600">${calculateTotalPrice(selectedProduct.price).fee.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-3 border-t-2 border-purple-200">
+                            <span className="font-bold text-lg text-gray-900">Total à payer</span>
+                            <span className="font-extrabold text-2xl text-purple-700">
+                              ${calculateTotalPrice(selectedProduct.price).total.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 mt-auto">
+                        <a
+                          href={`https://wa.me/50932836938?text=${encodeURIComponent(`Bonjour! Je souhaite commander ce produit AliExpress:\n\n📦 ${selectedProduct.title}\n💵 Prix total: $${calculateTotalPrice(selectedProduct.price).total.toFixed(2)}\n🔗 ${selectedProduct.url}`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3"
+                        >
+                          <MessageCircle size={24} />
+                          Commander sur WhatsApp
+                        </a>
+                        <a
+                          href={selectedProduct.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold hover:border-orange-500 hover:text-orange-500 transition-all flex items-center justify-center gap-2"
+                        >
+                          <ExternalLink size={18} />
+                          Voir sur AliExpress
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 bg-green-50 rounded-2xl p-5">
+                    <h4 className="font-bold text-green-800 mb-3">📦 Prochaines étapes</h4>
+                    <ol className="text-sm text-green-700 space-y-2">
+                      <li>1. Cliquez sur "Commander sur WhatsApp"</li>
+                      <li>2. Confirmez votre commande avec notre équipe</li>
+                      <li>3. Payez via MonCash, cash ou carte bancaire</li>
+                      <li>4. Récupérez votre colis à Champin (délai: 7-15 jours)</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Initial State */}
-          {!loading && !hasSearched && products.length === 0 && (
+          {!loading && !loadingDetails && searchResults.length === 0 && !selectedProduct && !error && !hasSearched && (
             <div className="text-center py-16">
               <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="text-orange-500" size={48} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">Commencez votre recherche</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Recherchez un produit</h3>
               <p className="text-gray-600 max-w-md mx-auto">
-                Entrez le nom d'un produit ci-dessus et nous vous montrerons les meilleures offres AliExpress.
+                Tapez le nom d'un produit ci-dessus ou utilisez les suggestions populaires.
               </p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Order Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-start gap-4 mb-6">
-                {selectedProduct.product_main_image_url && (
-                  <img
-                    src={selectedProduct.product_main_image_url}
-                    alt={selectedProduct.product_title}
-                    className="w-24 h-24 object-contain rounded-xl bg-gray-100"
-                  />
-                )}
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-900 text-lg line-clamp-2 mb-2">
-                    {selectedProduct.product_title}
-                  </h3>
-                  <div className="text-2xl font-extrabold text-purple-700">
-                    ${calculateTotalPrice(selectedProduct.app_sale_price || "0").total.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Price Breakdown */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 mb-6">
-                <h4 className="font-bold text-gray-900 mb-3">Détail du prix</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Prix du produit</span>
-                    <span className="font-semibold">${parseFloat(selectedProduct.app_sale_price || "0").toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Frais de service Up-to-date</span>
-                    <span className="font-semibold text-orange-600">${calculateTotalPrice(selectedProduct.app_sale_price || "0").fee.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-200">
-                    <span className="font-bold">Total à payer</span>
-                    <span className="font-bold text-purple-700">${calculateTotalPrice(selectedProduct.app_sale_price || "0").total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="bg-green-50 rounded-2xl p-4 mb-6">
-                <h4 className="font-bold text-green-800 mb-2">Comment commander ?</h4>
-                <ol className="text-sm text-green-700 space-y-2">
-                  <li>1. Cliquez sur le bouton WhatsApp ci-dessous</li>
-                  <li>2. Envoyez-nous le lien du produit</li>
-                  <li>3. Nous confirmons le prix total et la disponibilité</li>
-                  <li>4. Payez via MonCash, cash ou carte</li>
-                  <li>5. Récupérez votre colis à Champin (3-5 jours)</li>
-                </ol>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <a
-                  href={`https://wa.me/50932836938?text=${encodeURIComponent(`Bonjour! Je souhaite commander ce produit AliExpress:\n\n📦 ${selectedProduct.product_title}\n💵 Prix total: $${calculateTotalPrice(selectedProduct.app_sale_price || "0").total.toFixed(2)}\n🔗 ${selectedProduct.product_detail_url}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center justify-center gap-3"
-                >
-                  <MessageCircle size={24} />
-                  Commander sur WhatsApp
-                </a>
-                <button
-                  onClick={closeModal}
-                  className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold hover:border-gray-300 hover:bg-gray-50 transition-all duration-300"
-                >
-                  Fermer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Besoin d'aide pour votre commande ?</h2>
+          <h2 className="text-3xl font-bold text-white mb-4">Besoin d'aide ?</h2>
           <p className="text-white/90 text-lg mb-8">
-            Notre équipe est disponible sur WhatsApp pour vous accompagner dans vos achats AliExpress.
+            Notre équipe est disponible sur WhatsApp pour vous accompagner.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="https://wa.me/50932836938"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
               <MessageCircle size={24} />
               Nous contacter
             </a>
             <Link
               href="/produits"
-              className="inline-flex items-center justify-center gap-3 px-8 py-4 border-2 border-white text-white rounded-xl font-bold text-lg hover:bg-white/10 transition-all duration-300"
+              className="inline-flex items-center justify-center gap-3 px-8 py-4 border-2 border-white text-white rounded-xl font-bold text-lg hover:bg-white/10 transition-all"
             >
               <ShoppingCart size={24} />
               Voir nos produits en stock

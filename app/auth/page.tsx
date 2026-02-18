@@ -48,14 +48,36 @@ export default function AuthPage() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
-        // Verify role and redirect
-        const { data: profile } = await supabase
+        // Verify role and redirect - try multiple methods
+        let isAdmin = false;
+        
+        // Method 1: Try to get profile directly
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', data.user.id)
           .single();
         
-        if (profile && profile.is_admin) {
+        if (profile && profile.is_admin === true) {
+          isAdmin = true;
+        }
+        
+        // Method 2: Also check by email if profile query failed
+        if (!profile || profileError) {
+          const { data: profileByEmail } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('email', data.user.email)
+            .single();
+          
+          if (profileByEmail && profileByEmail.is_admin === true) {
+            isAdmin = true;
+          }
+        }
+        
+        console.log('Login - User ID:', data.user.id, 'Email:', data.user.email, 'Is Admin:', isAdmin, 'Profile:', profile);
+        
+        if (isAdmin) {
           window.location.href = "/admin";
         } else {
           window.location.href = "/my-orders";
