@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getPriceBreakdown, USD_TO_GDS_RATE, formatGourdes } from "@/app/utils/pricing";
 
 export default function PriceCalculator() {
   const [input, setInput] = useState(0);
@@ -15,7 +16,7 @@ export default function PriceCalculator() {
 
   useEffect(() => {
     if (input > 0) {
-      const breakdown = require("@/app/utils/pricing").getPriceBreakdown(input);
+      const breakdown = getPriceBreakdown(input);
       setFee(breakdown.fee);
       setFeeType(breakdown.feeType);
       setTotal(breakdown.total);
@@ -42,8 +43,10 @@ export default function PriceCalculator() {
       {result && (
         <div className="w-full mt-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 text-center border border-blue-100 shadow">
           <div className="text-lg text-gray-700 mb-2">Frais appliqués : <span className="font-bold text-blue-700">{feeType}</span></div>
-          <div className="text-2xl font-extrabold text-blue-900 mb-1">Total à payer : {total.toFixed(2)} $</div>
-          <div className="text-sm text-gray-500">(Produit + frais d’assistance inclus)</div>
+          <div className="text-2xl font-extrabold text-blue-900 mb-1">Total USD : ${total.toFixed(2)}</div>
+          <div className="text-xl font-bold text-orange-600 mb-2">Total GDS : {formatGourdes(total)}</div>
+          <div className="text-sm text-gray-500">(Produit + frais d'assistance inclus)</div>
+          <div className="text-xs text-orange-500 mt-2">Taux: 1 USD = {USD_TO_GDS_RATE} GDS</div>
         </div>
       )}
     </div>

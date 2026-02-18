@@ -5,7 +5,7 @@ import Navbar from "@/app/components/Navbar";
 import PriceCalculator from "./components/PriceCalculator";
 import { Search, Truck, ShoppingCart } from "lucide-react";
 import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap } from "lucide-react";
-import { calculateFinalPrice } from "@/app/utils/pricing";
+import { calculateFinalPrice, USD_TO_GDS_RATE, formatGourdes, getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
 import { products as allProducts } from "@/app/data/products";
 import { useCart } from '@/app/context/CartContext';
@@ -390,18 +390,23 @@ export default function Home() {
 
       {/* Grille Tarifaire - UNIQUE */}
       <section id="pricing-grid" className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-extrabold text-blue-900 mb-4 tracking-tight">Grille Tarifaire</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Voici nos frais d’assistance pour vos commandes AliExpress, Amazon, Shein, Temu, etc.</p>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Voici nos frais d'assistance pour vos commandes AliExpress, Amazon, Shein, Temu, etc.</p>
+            <div className="mt-4 inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-full font-semibold">
+              <span>💵 Taux de change:</span>
+              <span className="font-bold">1 USD = {USD_TO_GDS_RATE} GDS</span>
+            </div>
           </div>
           <div className="overflow-x-auto rounded-2xl shadow-xl border border-blue-100 bg-white">
             <table className="min-w-full text-base">
               <thead className="bg-gradient-to-r from-blue-50 to-purple-50">
                 <tr>
-                  <th className="px-8 py-5 text-left font-bold text-blue-700 text-lg">Prix du produit</th>
-                  <th className="px-8 py-5 text-left font-bold text-blue-700 text-lg">Frais d’assistance</th>
-                  <th className="px-8 py-5 text-left font-bold text-blue-700 text-lg">Total à payer</th>
+                  <th className="px-6 py-5 text-left font-bold text-blue-700 text-lg">Prix du produit</th>
+                  <th className="px-6 py-5 text-left font-bold text-blue-700 text-lg">Frais d'assistance</th>
+                  <th className="px-6 py-5 text-left font-bold text-blue-700 text-lg">Total USD</th>
+                  <th className="px-6 py-5 text-left font-bold text-orange-600 text-lg">Total GDS</th>
                 </tr>
               </thead>
               <tbody>
@@ -411,12 +416,13 @@ export default function Home() {
                   { label: '100$ - 199$', value: 199 },
                   { label: '200$ et plus', value: 250 },
                 ].map((row, i) => {
-                  const breakdown = require("@/app/utils/pricing").getPriceBreakdown(row.value);
+                  const breakdown = getPriceBreakdown(row.value);
                   return (
                     <tr key={i} className="border-b last:border-0 hover:bg-blue-50/40 transition">
-                      <td className="px-8 py-5 text-gray-900 font-semibold">{row.label}</td>
-                      <td className="px-8 py-5 text-gray-700">{breakdown.feeType} <span className="font-bold text-blue-700">({breakdown.fee.toFixed(2)} $)</span></td>
-                      <td className="px-8 py-5 text-blue-700 font-bold text-lg">{breakdown.total.toFixed(2)} $</td>
+                      <td className="px-6 py-5 text-gray-900 font-semibold">{row.label}</td>
+                      <td className="px-6 py-5 text-gray-700">{breakdown.feeType} <span className="font-bold text-blue-700">({breakdown.fee.toFixed(2)} $)</span></td>
+                      <td className="px-6 py-5 text-blue-700 font-bold text-lg">${breakdown.total.toFixed(2)}</td>
+                      <td className="px-6 py-5 text-orange-600 font-bold text-lg">{formatGourdes(breakdown.total)}</td>
                     </tr>
                   );
                 })}
@@ -425,7 +431,8 @@ export default function Home() {
           </div>
           <div className="mt-8 text-center text-gray-600 text-base">
             <p className="mb-1">Les frais incluent uniquement l’achat du produit sur la plateforme choisie.</p>
-            <p>Pour un devis précis, contactez-nous sur WhatsApp.</p>
+            <p className="mb-2">Pour un devis précis, contactez-nous sur WhatsApp.</p>
+            <p className="text-sm text-orange-600 font-medium">💡 Paiement accepté en Gourdes ou en Dollars</p>
           </div>
         </div>
       </section>

@@ -1,5 +1,15 @@
 import { supabase } from "@/app/utils/supabaseClient";
 
+// Taux de change: 1 USD = 140 GDS
+export const USD_TO_GDS_RATE = 140;
+
+export function convertToGourdes(usd: number): number {
+  return usd * USD_TO_GDS_RATE;
+}
+
+export function formatGourdes(usd: number): string {
+  return `${convertToGourdes(usd).toLocaleString('fr-HT')} GDS`;
+}
 
 export function calculateFinalPrice(basePrice: number) {
   let fee = 0;

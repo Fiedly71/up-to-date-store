@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight } from "lucide-react";
+import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight, Wallet, X, Copy } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
-import { getPriceBreakdown } from "@/app/utils/pricing";
+import { getPriceBreakdown, USD_TO_GDS_RATE, formatGourdes } from "@/app/utils/pricing";
 import Link from "next/link";
 
 interface SearchProduct {
@@ -62,6 +62,9 @@ function AliExpressContent() {
   const [orderNotes, setOrderNotes] = useState("");
   const [orderColor, setOrderColor] = useState("");
   const [orderSize, setOrderSize] = useState("");
+  const [showMonCashModal, setShowMonCashModal] = useState(false);
+
+  const MONCASH_NUMBER = "39934388";
 
   const popularSearches = ["iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch", "USB-C cable", "Power bank"];
   const commonColors = ["Noir", "Blanc", "Rouge", "Bleu", "Rose", "Vert"];
@@ -703,10 +706,11 @@ function AliExpressContent() {
 
                       {/* Pricing */}
                       <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl p-5 mb-6 border border-purple-100">
-                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
                           <ShoppingCart size={18} className="text-purple-600" />
                           Récapitulatif
                         </h3>
+                        <p className="text-xs text-gray-500 mb-4">Taux: 1 USD = {USD_TO_GDS_RATE} GDS</p>
                         <div className="space-y-3">
                           <div className="flex justify-between items-center text-gray-600">
                             <span>Prix unitaire</span>
@@ -725,9 +729,15 @@ function AliExpressContent() {
                             <span className="font-semibold">${calculateTotalPrice(selectedProduct.price * orderQuantity).fee.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between items-center pt-4 border-t-2 border-purple-200">
-                            <span className="font-bold text-lg text-gray-900">Total à payer</span>
-                            <span className="font-extrabold text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                            <span className="font-bold text-lg text-gray-900">Total USD</span>
+                            <span className="font-extrabold text-xl text-purple-700">
                               ${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center bg-orange-100 -mx-5 px-5 py-3 rounded-b-xl">
+                            <span className="font-bold text-lg text-orange-800">Total en Gourdes</span>
+                            <span className="font-extrabold text-2xl text-orange-600">
+                              {formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}
                             </span>
                           </div>
                         </div>
@@ -735,6 +745,16 @@ function AliExpressContent() {
 
                       {/* Action Buttons */}
                       <div className="space-y-3">
+                        {/* MonCash Payment */}
+                        <button
+                          onClick={() => setShowMonCashModal(true)}
+                          className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
+                        >
+                          <Wallet size={24} />
+                          Payer avec MonCash
+                        </button>
+                        
+                        {/* WhatsApp Order */}
                         <a
                           href={`https://wa.me/50932836938?text=${encodeURIComponent(
 `🛒 *NOUVELLE COMMANDE ALIEXPRESS*
@@ -748,7 +768,9 @@ function AliExpressContent() {
 • Prix unitaire: $${selectedProduct.price.toFixed(2)}
 • Sous-total: $${(selectedProduct.price * orderQuantity).toFixed(2)}
 • Frais de service: $${calculateTotalPrice(selectedProduct.price * orderQuantity).fee.toFixed(2)}
-• *TOTAL: $${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}*
+• *TOTAL USD: $${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}*
+• *TOTAL GDS: ${formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}*
+_(Taux: 1 USD = ${USD_TO_GDS_RATE} GDS)_
 
 🔗 *Lien du produit:*
 ${selectedProduct.url}
@@ -847,6 +869,131 @@ Merci de confirmer ma commande!`
           </div>
         </div>
       </section>
+
+      {/* MonCash Payment Modal */}
+      {showMonCashModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4 flex items-center justify-between rounded-t-3xl">
+              <div className="flex items-center gap-3 text-white">
+                <Wallet size={24} />
+                <span className="font-bold text-lg">Paiement MonCash</span>
+              </div>
+              <button
+                onClick={() => setShowMonCashModal(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Order Summary */}
+              <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+                <h4 className="font-bold text-gray-900 mb-3">Résumé de la commande</h4>
+                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{selectedProduct.title}</p>
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total USD:</span>
+                    <span className="font-bold text-lg text-gray-900">
+                      ${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center bg-orange-100 -mx-4 px-4 py-2 rounded-lg">
+                    <span className="text-orange-800 font-medium">Total en Gourdes:</span>
+                    <span className="font-extrabold text-xl text-orange-600">
+                      {formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center">Taux: 1 USD = {USD_TO_GDS_RATE} GDS</p>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
+                  Envoyez le montant via MonCash
+                </h4>
+                
+                {/* MonCash Number Box */}
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-2xl p-5">
+                  <p className="text-sm text-gray-600 mb-2">Numéro MonCash:</p>
+                  <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-orange-200">
+                    <span className="text-2xl font-bold text-orange-600 tracking-wider">{MONCASH_NUMBER}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(MONCASH_NUMBER);
+                        alert("Numéro copié!");
+                      }}
+                      className="flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium text-sm bg-orange-50 px-3 py-2 rounded-lg transition-colors"
+                    >
+                      <Copy size={16} />
+                      Copier
+                    </button>
+                  </div>
+                  <div className="mt-3 bg-white rounded-lg p-3 border border-orange-200">
+                    <p className="text-sm text-gray-700 font-medium">Montant à envoyer:</p>
+                    <p className="text-2xl font-bold text-orange-600">{formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}</p>
+                    <p className="text-xs text-gray-500">(${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)} USD)</p>
+                  </div>
+                </div>
+
+                <h4 className="font-bold text-gray-900 flex items-center gap-2 pt-2">
+                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
+                  Confirmez votre paiement
+                </h4>
+                
+                <p className="text-gray-600 text-sm">
+                  Après avoir effectué le transfert MonCash, envoyez-nous une confirmation sur WhatsApp avec:
+                </p>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li>• Votre nom complet</li>
+                  <li>• Le numéro de transaction MonCash</li>
+                  <li>• Capture d&apos;écran du paiement (optionnel)</li>
+                </ul>
+
+                {/* Confirm Button */}
+                <a
+                  href={`https://wa.me/50932836938?text=${encodeURIComponent(
+`💳 *PAIEMENT MONCASH EFFECTUÉ*
+
+📦 *Commande:* ${selectedProduct.title}
+
+📊 *Détails:*
+• Quantité: ${orderQuantity}${orderColor ? `\n• Couleur: ${orderColor}` : ''}${orderSize ? `\n• Taille: ${orderSize}` : ''}${orderNotes ? `\n• Notes: ${orderNotes}` : ''}
+
+💰 *Montant payé:*
+• USD: $${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}
+• GDS: ${formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}
+
+📱 *Envoyé au:* ${MONCASH_NUMBER}
+
+🔗 *Produit:* ${selectedProduct.url}
+
+⏳ J'attends la confirmation de mon paiement. Merci!`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 mt-4"
+                >
+                  <MessageCircle size={22} />
+                  J&apos;ai payé - Confirmer sur WhatsApp
+                </a>
+
+                <button
+                  onClick={() => setShowMonCashModal(false)}
+                  className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold hover:border-gray-300 transition-all"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
