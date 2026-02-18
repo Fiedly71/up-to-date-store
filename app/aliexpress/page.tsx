@@ -2,10 +2,16 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight, Wallet, X, Copy } from "lucide-react";
+import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight, Wallet, X, Copy, LogIn, UserPlus } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { getPriceBreakdown, USD_TO_GDS_RATE, formatGourdes } from "@/app/utils/pricing";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface SearchProduct {
   itemId: string;
@@ -63,8 +69,27 @@ function AliExpressContent() {
   const [orderColor, setOrderColor] = useState("");
   const [orderSize, setOrderSize] = useState("");
   const [showMonCashModal, setShowMonCashModal] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const MONCASH_NUMBER = "39934388";
+
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setCheckingAuth(false);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const popularSearches = ["iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch", "USB-C cable", "Power bank"];
   const commonColors = ["Noir", "Blanc", "Rouge", "Bleu", "Rose", "Vert"];
@@ -745,19 +770,53 @@ function AliExpressContent() {
 
                       {/* Action Buttons */}
                       <div className="space-y-3">
-                        {/* MonCash Payment */}
-                        <button
-                          onClick={() => setShowMonCashModal(true)}
-                          className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
-                        >
-                          <Wallet size={24} />
-                          Payer avec MonCash
-                        </button>
-                        
-                        {/* WhatsApp Order */}
-                        <a
-                          href={`https://wa.me/50932836938?text=${encodeURIComponent(
+                        {/* Login Required Message */}
+                        {!user && !checkingAuth && (
+                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 text-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                              <LogIn className="text-white" size={28} />
+                            </div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-2">Connexion requise</h4>
+                            <p className="text-gray-600 mb-4">
+                              Connectez-vous pour passer votre commande et suivre son état
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                              <Link
+                                href="/auth"
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all"
+                              >
+                                <LogIn size={20} />
+                                Se connecter
+                              </Link>
+                              <Link
+                                href="/auth"
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-xl font-bold hover:bg-purple-50 transition-all"
+                              >
+                                <UserPlus size={20} />
+                                Créer un compte
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Order Buttons - Only show when logged in */}
+                        {user && (
+                          <>
+                            {/* MonCash Payment */}
+                            <button
+                              onClick={() => setShowMonCashModal(true)}
+                              className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
+                            >
+                              <Wallet size={24} />
+                              Payer avec MonCash
+                            </button>
+                            
+                            {/* WhatsApp Order */}
+                            <a
+                              href={`https://wa.me/50932836938?text=${encodeURIComponent(
 `🛒 *NOUVELLE COMMANDE ALIEXPRESS*
+
+👤 *Client:* ${user.email}
 
 📦 *Produit:* ${selectedProduct.title}
 
@@ -776,14 +835,16 @@ _(Taux: 1 USD = ${USD_TO_GDS_RATE} GDS)_
 ${selectedProduct.url}
 
 Merci de confirmer ma commande!`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
-                        >
-                          <MessageCircle size={24} />
-                          Commander sur WhatsApp
-                        </a>
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
+                            >
+                              <MessageCircle size={24} />
+                              Commander sur WhatsApp
+                            </a>
+                          </>
+                        )}
                         <a
                           href={selectedProduct.url}
                           target="_blank"
@@ -960,7 +1021,9 @@ Merci de confirmer ma commande!`
                   href={`https://wa.me/50932836938?text=${encodeURIComponent(
 `💳 *PAIEMENT MONCASH EFFECTUÉ*
 
-📦 *Commande:* ${selectedProduct.title}
+� *Client:* ${user?.email || 'Non connecté'}
+
+�📦 *Commande:* ${selectedProduct.title}
 
 📊 *Détails:*
 • Quantité: ${orderQuantity}${orderColor ? `\n• Couleur: ${orderColor}` : ''}${orderSize ? `\n• Taille: ${orderSize}` : ''}${orderNotes ? `\n• Notes: ${orderNotes}` : ''}

@@ -3,19 +3,43 @@ import { useState, useEffect } from "react";
 
 import Navbar from "@/app/components/Navbar";
 import PriceCalculator from "./components/PriceCalculator";
-import { Search, Truck, ShoppingCart, Package } from "lucide-react";
+import { Search, Truck, ShoppingCart, Package, LogIn, UserPlus } from "lucide-react";
 import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap, ArrowRight } from "lucide-react";
 import { calculateFinalPrice, USD_TO_GDS_RATE, formatGourdes, getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
 import { products as allProducts } from "@/app/data/products";
 import { useCart } from '@/app/context/CartContext';
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function Home() {
   const [productQuery, setProductQuery] = useState("");
   const [error, setError] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setCheckingAuth(false);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Synchronisation des quantités
   useEffect(() => {
@@ -85,6 +109,51 @@ export default function Home() {
             <div className="mt-6 text-blue-700 font-semibold text-lg">
               Payez localement à Champin ou via <span className="font-bold text-orange-600">MonCash</span> (coordination simple)
             </div>
+
+            {/* Auth Buttons */}
+            {!checkingAuth && !user && (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                >
+                  <LogIn size={22} />
+                  Se connecter
+                </Link>
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-purple-300 text-purple-700 rounded-xl font-bold text-lg shadow-md hover:bg-purple-50 hover:border-purple-400 transition-all duration-300"
+                >
+                  <UserPlus size={22} />
+                  Créer un compte
+                </Link>
+              </div>
+            )}
+
+            {!checkingAuth && user && (
+              <div className="mt-8 flex flex-col items-center gap-3">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full font-semibold">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  Connecté: {user.email}
+                </div>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Link
+                    href="/aliexpress"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300"
+                  >
+                    <ShoppingCart size={20} />
+                    Commander sur AliExpress
+                  </Link>
+                  <Link
+                    href="/my-orders"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-xl font-bold shadow-md hover:bg-blue-50 transition-all duration-300"
+                  >
+                    <Package size={20} />
+                    Mes commandes
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {services.map((service, index) => {
