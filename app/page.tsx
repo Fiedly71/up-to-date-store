@@ -15,6 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
 
@@ -41,7 +42,7 @@ export default function Home() {
       setError("Veuillez entrer un mot-clé ou un lien AliExpress.");
       return;
     }
-    window.location.href = `/produits?search=${encodeURIComponent(productQuery)}`;
+    window.location.href = `/aliexpress?search=${encodeURIComponent(productQuery)}`;
   };
 
   const services = [
@@ -375,48 +376,97 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FAQ - UNIQUE */}
+      {/* FAQ - INTERACTIVE */}
       <section className="py-16 sm:py-24 bg-gradient-to-b from-slate-100 to-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-extrabold text-purple-900 mb-4 tracking-tight">Questions Fréquemment Posées</h2>
             <p className="text-lg text-gray-600 max-w-xl mx-auto">Trouvez les réponses aux questions les plus courantes sur nos services, paiements et livraisons.</p>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* FAQ Item 1 */}
-            <div className="rounded-2xl border border-purple-200 bg-white shadow-md hover:shadow-lg transition-shadow">
-              <button className="w-full px-8 py-6 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors rounded-t-2xl">
-                <h3 className="text-xl font-semibold text-purple-900 text-left">Combien de temps dure le shipping ?</h3>
-                <ChevronDown size={28} className="text-purple-600 flex-shrink-0 ml-4" />
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === 1 ? null : 1)}
+                className="w-full px-6 py-5 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-purple-900 text-left">Combien de temps dure le shipping ?</h3>
+                <ChevronDown size={24} className={`text-purple-600 flex-shrink-0 ml-4 transition-transform duration-300 ${openFaq === 1 ? 'rotate-180' : ''}`} />
               </button>
-              <div className="px-8 py-6 bg-white border-t border-purple-100 rounded-b-2xl">
-                <p className="text-gray-700 text-lg">Nos délais sont rapides, entre <span className="font-semibold">3 à 5 jours depuis les USA</span>. Nous nous engageons à livrer vos commandes dans les meilleurs délais possibles.</p>
-              </div>
+              {openFaq === 1 && (
+                <div className="px-6 py-5 bg-white border-t border-purple-100">
+                  <p className="text-gray-700">Nos délais sont rapides, entre <span className="font-semibold">3 à 5 jours depuis les USA</span>. Nous nous engageons à livrer vos commandes dans les meilleurs délais possibles.</p>
+                </div>
+              )}
             </div>
+            
             {/* FAQ Item 2 */}
-            <div className="rounded-2xl border border-purple-200 bg-white shadow-md hover:shadow-lg transition-shadow">
-              <button className="w-full px-8 py-6 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors rounded-t-2xl">
-                <h3 className="text-xl font-semibold text-purple-900 text-left">Puis-je payer en Gourdes ou en Dollars ?</h3>
-                <ChevronDown size={28} className="text-purple-600 flex-shrink-0 ml-4" />
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === 2 ? null : 2)}
+                className="w-full px-6 py-5 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-purple-900 text-left">Puis-je payer en Gourdes ou en Dollars ?</h3>
+                <ChevronDown size={24} className={`text-purple-600 flex-shrink-0 ml-4 transition-transform duration-300 ${openFaq === 2 ? 'rotate-180' : ''}`} />
               </button>
-              <div className="px-8 py-6 bg-white border-t border-purple-100 rounded-b-2xl">
-                <p className="text-gray-700 text-lg"><span className="font-semibold">Nous acceptons les deux devises</span> (Gourdes et Dollars) pour vous faciliter la vie. Contactez-nous sur WhatsApp pour connaître les tarifs actuels et discuter des modalités de paiement.</p>
-              </div>
+              {openFaq === 2 && (
+                <div className="px-6 py-5 bg-white border-t border-purple-100">
+                  <p className="text-gray-700"><span className="font-semibold">Nous acceptons les deux devises</span> (Gourdes et Dollars) pour vous faciliter la vie. Contactez-nous sur WhatsApp pour connaître les tarifs actuels et discuter des modalités de paiement.</p>
+                </div>
+              )}
             </div>
+            
             {/* FAQ Item 3 */}
-            <div className="rounded-2xl border border-purple-200 bg-white shadow-md hover:shadow-lg transition-shadow">
-              <button className="w-full px-8 py-6 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors rounded-t-2xl">
-                <h3 className="text-xl font-semibold text-purple-900 text-left">Où récupère-je mon colis ?</h3>
-                <ChevronDown size={28} className="text-purple-600 flex-shrink-0 ml-4" />
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === 3 ? null : 3)}
+                className="w-full px-6 py-5 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-purple-900 text-left">Où récupère-je mon colis ?</h3>
+                <ChevronDown size={24} className={`text-purple-600 flex-shrink-0 ml-4 transition-transform duration-300 ${openFaq === 3 ? 'rotate-180' : ''}`} />
               </button>
-              <div className="px-8 py-6 bg-white border-t border-purple-100 rounded-b-2xl">
-                <p className="text-gray-700 text-lg">Directement à notre boutique à <span className="font-semibold">Champin, Cap-Haïtien</span> (#J-123). Vous pouvez vous présenter à notre adresse durant nos horaires d'ouverture (Lun-Sam: 9h - 18h) ou nous contacter pour organiser un rendez-vous.</p>
-              </div>
+              {openFaq === 3 && (
+                <div className="px-6 py-5 bg-white border-t border-purple-100">
+                  <p className="text-gray-700">Directement à notre boutique à <span className="font-semibold">Champin, Cap-Haïtien</span> (#J-123). Vous pouvez vous présenter à notre adresse durant nos horaires d'ouverture (Lun-Sam: 9h - 18h) ou nous contacter pour organiser un rendez-vous.</p>
+                </div>
+              )}
+            </div>
+            
+            {/* FAQ Item 4 */}
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === 4 ? null : 4)}
+                className="w-full px-6 py-5 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-purple-900 text-left">Comment commander sur AliExpress ?</h3>
+                <ChevronDown size={24} className={`text-purple-600 flex-shrink-0 ml-4 transition-transform duration-300 ${openFaq === 4 ? 'rotate-180' : ''}`} />
+              </button>
+              {openFaq === 4 && (
+                <div className="px-6 py-5 bg-white border-t border-purple-100">
+                  <p className="text-gray-700">C'est simple ! Utilisez notre <span className="font-semibold">barre de recherche AliExpress</span> ci-dessus, trouvez votre produit, et contactez-nous sur WhatsApp avec le lien. Nous nous occupons de la commande, de l'expédition et de la livraison à Champin.</p>
+                </div>
+              )}
+            </div>
+            
+            {/* FAQ Item 5 */}
+            <div className="rounded-2xl border border-purple-200 bg-white shadow-md overflow-hidden">
+              <button
+                onClick={() => setOpenFaq(openFaq === 5 ? null : 5)}
+                className="w-full px-6 py-5 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white hover:from-purple-100 hover:to-white transition-colors"
+              >
+                <h3 className="text-lg font-semibold text-purple-900 text-left">Quels moyens de paiement acceptez-vous ?</h3>
+                <ChevronDown size={24} className={`text-purple-600 flex-shrink-0 ml-4 transition-transform duration-300 ${openFaq === 5 ? 'rotate-180' : ''}`} />
+              </button>
+              {openFaq === 5 && (
+                <div className="px-6 py-5 bg-white border-t border-purple-100">
+                  <p className="text-gray-700">Nous acceptons <span className="font-semibold">MonCash, Cash (espèces)</span>, et <span className="font-semibold">Carte bancaire</span>. Le paiement se fait localement à notre boutique ou via MonCash pour plus de commodité.</p>
+                </div>
+              )}
             </div>
           </div>
-          <div className="mt-14 text-center">
+          <div className="mt-12 text-center">
             <p className="text-gray-700 text-lg mb-4">Vous avez d'autres questions ?</p>
-            <a href="https://wa.me/50932836938" target="_blank" rel="noopener noreferrer" className="inline-block bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-10 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-3 justify-center">
+            <a href="https://wa.me/50932836938" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-10 py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-2xl transition-all duration-300">
               <MessageCircle size={24} /> Nous contacter sur WhatsApp
             </a>
           </div>
@@ -460,6 +510,7 @@ export default function Home() {
                 <li><Link href="/">Accueil</Link></li>
                 <li><Link href="/about">À propos</Link></li>
                 <li><Link href="/produits">Produits</Link></li>
+                <li><Link href="/aliexpress" className="text-orange-400 font-semibold">AliExpress</Link></li>
                 <li><Link href="/panier">Panier</Link></li>
                 <li><Link href="/my-orders">Mes commandes</Link></li>
                 <li><Link href="/checkout">Checkout</Link></li>

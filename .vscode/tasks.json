@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Pricing Test",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const { calculateFinalPrice, getPriceBreakdown } = require('./app/utils/pricing');\n\nfunction testPricingFunctions() {\n    const testCases = [\n        { basePrice: 30, expectedFee: 8, expectedTotal: 38 },\n        { basePrice: 75, expectedFee: 12, expectedTotal: 87 },\n        { basePrice: 150, expectedFee: 20, expectedTotal: 170 },\n        { basePrice: 250, expectedFee: 50, expectedTotal: 300 },\n    ];\n\n    testCases.forEach(({ basePrice, expectedFee, expectedTotal }) => {\n        const finalPrice = calculateFinalPrice(basePrice);\n        const breakdown = getPriceBreakdown(basePrice);\n\n        console.log(`Base Price: $${basePrice}`);\n        console.log(`Expected Fee: $${expectedFee}, Calculated Fee: $${breakdown.fee}`);\n        console.log(`Expected Total: $${expectedTotal}, Calculated Total: $${breakdown.total}`);\n        console.log('---');\n    });\n}\n\ntestPricingFunctions();"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Run Pricing Test",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"const { calculateFinalPrice, getPriceBreakdown } = require('./app/utils/pricing.js');\n\nfunction testPricingFunctions() {\n    const testCases = [\n        { basePrice: 30, expectedFee: 8, expectedTotal: 38 },\n        { basePrice: 75, expectedFee: 12, expectedTotal: 87 },\n        { basePrice: 150, expectedFee: 20, expectedTotal: 170 },\n        { basePrice: 250, expectedFee: 50, expectedTotal: 300 },\n    ];\n\n    testCases.forEach(({ basePrice, expectedFee, expectedTotal }) => {\n        const finalPrice = calculateFinalPrice(basePrice);\n        const breakdown = getPriceBreakdown(basePrice);\n\n        console.log(`Base Price: $${basePrice}`);\n        console.log(`Expected Fee: $${expectedFee}, Calculated Fee: $${breakdown.fee}`);\n        console.log(`Expected Total: $${expectedTotal}, Calculated Total: $${breakdown.total}`);\n        console.log('---');\n    });\n}\n\ntestPricingFunctions();"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}

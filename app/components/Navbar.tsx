@@ -20,40 +20,15 @@ export default function Navbar(): React.ReactElement {
 
   useEffect(() => {
     let ignore = false;
-    async function checkUserAndRedirect() {
+    async function checkUser() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
       setLoading(false);
-      if (data.user) {
-        // Always check is_admin from profiles table
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', data.user.id)
-          .single();
-        if (profile && profile.is_admin) {
-          if (window.location.pathname !== "/admin") window.location.href = "/admin";
-        } else {
-          if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
-        }
-      }
     }
-    checkUserAndRedirect();
-    // Listen to auth changes
+    checkUser();
+    // Listen to auth changes (without automatic redirect)
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user || null);
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-        if (profile && profile.is_admin) {
-          if (window.location.pathname !== "/admin") window.location.href = "/admin";
-        } else {
-          if (window.location.pathname !== "/my-orders") window.location.href = "/my-orders";
-        }
-      }
     });
     return () => {
       ignore = true;
@@ -105,6 +80,9 @@ export default function Navbar(): React.ReactElement {
           </Link>
           <Link href="/produits" className="premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105">
             Shop
+          </Link>
+          <Link href="/aliexpress" className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:from-orange-600 hover:to-red-600 shadow-md hover:shadow-lg transition-all duration-300">
+            AliExpress
           </Link>
           <Link href="/about" className="px-4 py-2 text-gray-700 hover:text-transparent hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:bg-clip-text font-semibold transition-all duration-300 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50">
             À Propos
@@ -182,6 +160,13 @@ export default function Navbar(): React.ReactElement {
             onClick={() => setMobileMenuOpen(false)}
           >
             Shop
+          </Link>
+          <Link 
+            href="/aliexpress" 
+            className="block bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-xl font-bold text-center shadow-lg hover:shadow-xl transition-all duration-300" 
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            AliExpress
           </Link>
           <Link 
             href="/about" 
