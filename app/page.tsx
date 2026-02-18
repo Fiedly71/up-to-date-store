@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 
 import Navbar from "@/app/components/Navbar";
 import PriceCalculator from "./components/PriceCalculator";
-import { Search, Truck, ShoppingCart } from "lucide-react";
-import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap } from "lucide-react";
+import { Search, Truck, ShoppingCart, Package } from "lucide-react";
+import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap, ArrowRight } from "lucide-react";
 import { calculateFinalPrice, USD_TO_GDS_RATE, formatGourdes, getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
 import { products as allProducts } from "@/app/data/products";
@@ -445,6 +445,78 @@ export default function Home() {
             <p className="text-lg text-gray-600">Simulez le coût total d'un produit importé (frais inclus)</p>
           </div>
           <PriceCalculator />
+        </div>
+      </section>
+
+      {/* Section Suivi de Colis */}
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Package className="text-white" size={32} />
+            </div>
+            <h2 className="text-4xl font-extrabold text-emerald-900 mb-4 tracking-tight">Suivez votre Colis</h2>
+            <p className="text-lg text-gray-600 max-w-xl mx-auto">
+              Entrez votre numéro de suivi pour voir où en est votre commande
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-xl border border-emerald-100 p-8">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const input = (e.currentTarget.elements.namedItem('tracking') as HTMLInputElement)?.value;
+                if (input?.trim()) {
+                  window.location.href = `/suivi?numero=${encodeURIComponent(input.trim())}`;
+                }
+              }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-emerald-400" />
+                </div>
+                <input
+                  type="text"
+                  name="tracking"
+                  placeholder="Entrez votre numéro de suivi..."
+                  className="w-full pl-12 pr-6 py-4 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 text-lg font-medium transition-all duration-300"
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <Truck size={20} />
+                Suivre
+              </button>
+            </form>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <Clock className="text-emerald-500" size={18} />
+                <span>Suivi en temps réel</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="text-emerald-500" size={18} />
+                <span>Miami → Cap-Haïtien</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="text-emerald-500" size={18} />
+                <span>Mises à jour instantanées</span>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link
+                href="/suivi"
+                className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+              >
+                Accéder à la page de suivi complète
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

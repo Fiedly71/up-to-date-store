@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
-import { Package, Clock, Truck, CheckCircle, MapPin, ShoppingBag, RefreshCw, ExternalLink } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, MapPin, ShoppingBag, RefreshCw, ExternalLink, Eye } from "lucide-react";
 import Link from "next/link";
 
 const supabase = createClient(
@@ -223,7 +223,16 @@ export default function MyOrdersPage() {
                     {/* Tracking Info */}
                     {(order.miami_tracking_number || order.haiti_tracking_number) && (
                       <div className="bg-gray-50 rounded-xl p-4 mt-4">
-                        <h4 className="font-semibold text-gray-900 mb-2 text-sm">Suivi du colis</h4>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-gray-900 text-sm">Suivi du colis</h4>
+                          <Link
+                            href={`/suivi?numero=${order.miami_tracking_number || order.haiti_tracking_number || order.id}`}
+                            className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                          >
+                            <Eye size={16} />
+                            Suivi détaillé
+                          </Link>
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                           {order.miami_tracking_number && (
                             <div className="flex items-center gap-2">
@@ -238,6 +247,19 @@ export default function MyOrdersPage() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Track Button for orders without tracking yet */}
+                    {!order.miami_tracking_number && !order.haiti_tracking_number && (
+                      <div className="mt-4 text-center">
+                        <Link
+                          href={`/suivi?numero=${order.id}`}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-semibold hover:bg-blue-100 transition-colors text-sm"
+                        >
+                          <Eye size={16} />
+                          Voir le suivi de cette commande
+                        </Link>
                       </div>
                     )}
 
