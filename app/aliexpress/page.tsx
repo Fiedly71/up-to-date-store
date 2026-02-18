@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
@@ -31,7 +32,23 @@ interface ProductDetails {
   url: string;
 }
 
-export default function AliExpressPage() {
+// Wrapper component that uses useSearchParams
+function SearchParamsHandler({ onSearch }: { onSearch: (query: string) => void }) {
+  const searchParams = useSearchParams();
+  const [handled, setHandled] = useState(false);
+
+  useEffect(() => {
+    const urlSearch = searchParams.get("search");
+    if (urlSearch && !handled) {
+      setHandled(true);
+      onSearch(urlSearch);
+    }
+  }, [searchParams, handled, onSearch]);
+
+  return null;
+}
+
+function AliExpressContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [productUrl, setProductUrl] = useState("");
   const [searchResults, setSearchResults] = useState<SearchProduct[]>([]);
@@ -41,8 +58,75 @@ export default function AliExpressPage() {
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"search" | "link">("search");
   const [hasSearched, setHasSearched] = useState(false);
+  const [orderQuantity, setOrderQuantity] = useState(1);
+  const [orderNotes, setOrderNotes] = useState("");
+  const [orderColor, setOrderColor] = useState("");
+  const [orderSize, setOrderSize] = useState("");
 
   const popularSearches = ["iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch", "USB-C cable", "Power bank"];
+  const commonColors = ["Noir", "Blanc", "Rouge", "Bleu", "Rose", "Vert"];
+  const commonSizes = ["S", "M", "L", "XL", "XXL", "Unique"];
+
+  // Handle search from URL parameter (called by SearchParamsHandler)
+  const handleSearchFromUrl = async (searchTerm: string) => {
+    if (!searchTerm.trim()) return;
+
+    setSearchQuery(searchTerm);
+    setLoading(true);
+    setError("");
+    setSearchResults([]);
+    setSelectedProduct(null);
+    setHasSearched(true);
+
+    try {
+      const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_search_2?q=${encodeURIComponent(searchTerm)}&page=1`, {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
+          "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.message && data.message.includes("not subscribed")) {
+        setError("Erreur API. Veuillez réessayer plus tard.");
+        return;
+      }
+
+      if (!data.result?.resultList || data.result.resultList.length === 0) {
+        setError("Aucun produit trouvé. Essayez un autre mot-clé.");
+        return;
+      }
+
+      const products: SearchProduct[] = data.result.resultList.map((item: any) => {
+        const product = item.item;
+        let price = 0;
+        if (product.sku?.def?.promotionPrice) {
+          price = parseFloat(product.sku.def.promotionPrice);
+        } else if (product.sku?.def?.price) {
+          price = parseFloat(product.sku.def.price);
+        }
+        
+        return {
+          itemId: product.itemId,
+          title: product.title,
+          image: product.image?.startsWith("//") ? `https:${product.image}` : product.image,
+          price: price,
+          originalPrice: product.sku?.def?.price ? parseFloat(product.sku.def.price) : undefined,
+          sales: product.sales,
+          url: `https://www.aliexpress.com/item/${product.itemId}.html`
+        };
+      });
+
+      setSearchResults(products);
+    } catch (err) {
+      console.error("API Error:", err);
+      setError("Erreur de connexion. Vérifiez votre connexion internet.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Search products by keyword
   const handleSearch = async (query?: string) => {
@@ -112,6 +196,11 @@ export default function AliExpressPage() {
   const getProductDetails = async (itemId: string, url: string) => {
     setLoadingDetails(true);
     setError("");
+    // Reset order options when viewing a new product
+    setOrderQuantity(1);
+    setOrderNotes("");
+    setOrderColor("");
+    setOrderSize("");
 
     try {
       const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_detail_2?itemId=${itemId}`, {
@@ -208,6 +297,11 @@ export default function AliExpressPage() {
         .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
       <Navbar />
+      
+      {/* Handle URL search params */}
+      <Suspense fallback={null}>
+        <SearchParamsHandler onSearch={handleSearchFromUrl} />
+      </Suspense>
       
       {/* Hero Section */}
       <section className="relative py-12 sm:py-20 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 overflow-hidden">
@@ -446,79 +540,224 @@ export default function AliExpressPage() {
 
           {/* Selected Product Details */}
           {!loading && !loadingDetails && selectedProduct && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-5xl mx-auto">
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="mb-6 text-purple-600 font-semibold hover:text-purple-800 flex items-center gap-2"
+                className="mb-6 text-purple-600 font-semibold hover:text-purple-800 flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-lg"
               >
-                ← Retour aux résultats
+                <ArrowRight className="rotate-180" size={18} />
+                Retour aux résultats
               </button>
               
               <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
-                  <div className="flex items-center gap-2 text-white">
-                    <CheckCircle size={20} />
-                    <span className="font-semibold">Produit trouvé sur AliExpress</span>
+                {/* Header Banner */}
+                <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 px-6 py-4">
+                  <div className="flex items-center justify-between text-white">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={20} />
+                      <span className="font-semibold">Produit trouvé sur AliExpress</span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                      <Shield size={16} />
+                      <span className="text-sm font-medium">Achat sécurisé</span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="p-6 sm:p-8">
-                  <div className="flex flex-col md:flex-row gap-8">
-                    <div className="md:w-1/2">
-                      <div className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-square">
+                  <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Product Image */}
+                    <div className="lg:w-1/2">
+                      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 aspect-square shadow-lg">
                         {selectedProduct.images && selectedProduct.images.length > 0 ? (
                           <img
                             src={selectedProduct.images[0].startsWith("//") ? `https:${selectedProduct.images[0]}` : selectedProduct.images[0]}
                             alt={selectedProduct.title}
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-contain p-4"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="text-gray-300" size={80} />
                           </div>
                         )}
+                        <div className="absolute top-4 left-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                          AliExpress
+                        </div>
+                      </div>
+                      
+                      {/* Trust Badges */}
+                      <div className="grid grid-cols-3 gap-3 mt-4">
+                        <div className="bg-gray-50 rounded-xl p-3 text-center">
+                          <Truck className="mx-auto text-blue-600 mb-1" size={20} />
+                          <p className="text-xs text-gray-600 font-medium">7-15 jours</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3 text-center">
+                          <Shield className="mx-auto text-green-600 mb-1" size={20} />
+                          <p className="text-xs text-gray-600 font-medium">Garanti</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3 text-center">
+                          <Star className="mx-auto text-yellow-500 mb-1" size={20} />
+                          <p className="text-xs text-gray-600 font-medium">Top qualité</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="md:w-1/2 flex flex-col">
+                    {/* Product Info & Order Form */}
+                    <div className="lg:w-1/2 flex flex-col">
                       <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 leading-tight">
                         {selectedProduct.title}
                       </h2>
 
-                      <div className="flex flex-wrap gap-4 mb-6 text-sm text-gray-600">
+                      {/* Ratings */}
+                      <div className="flex flex-wrap gap-4 mb-6 text-sm">
                         {selectedProduct.ratings && (
-                          <span className="flex items-center gap-1">⭐ {selectedProduct.ratings.toFixed(1)}</span>
+                          <span className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full">
+                            <Star className="text-yellow-500" size={16} fill="currentColor" />
+                            <span className="font-semibold text-yellow-700">{selectedProduct.ratings.toFixed(1)}</span>
+                          </span>
                         )}
-                        {selectedProduct.reviews && <span>{selectedProduct.reviews} avis</span>}
-                        {selectedProduct.orders && <span>{selectedProduct.orders}+ vendus</span>}
+                        {selectedProduct.reviews && (
+                          <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">{selectedProduct.reviews} avis</span>
+                        )}
+                        {selectedProduct.orders && (
+                          <span className="bg-green-50 px-3 py-1 rounded-full text-green-700 font-medium">{selectedProduct.orders}+ vendus</span>
+                        )}
                       </div>
 
-                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-5 mb-6">
-                        <h3 className="font-bold text-gray-900 mb-4">Détail du prix</h3>
+                      {/* Order Options */}
+                      <div className="space-y-4 mb-6">
+                        {/* Quantity */}
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Quantité</label>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setOrderQuantity(Math.max(1, orderQuantity - 1))}
+                              className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100 font-bold text-lg"
+                            >
+                              -
+                            </button>
+                            <span className="w-16 h-10 flex items-center justify-center border-2 border-gray-300 rounded-lg font-bold text-lg">
+                              {orderQuantity}
+                            </span>
+                            <button
+                              onClick={() => setOrderQuantity(Math.min(99, orderQuantity + 1))}
+                              className="w-10 h-10 rounded-lg border-2 border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100 font-bold text-lg"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Color Selection */}
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Couleur (optionnel)</label>
+                          <div className="flex flex-wrap gap-2">
+                            {commonColors.map((color) => (
+                              <button
+                                key={color}
+                                onClick={() => setOrderColor(orderColor === color ? "" : color)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                  orderColor === color
+                                    ? "bg-purple-600 text-white shadow-md"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                              >
+                                {color}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Size Selection */}
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Taille (optionnel)</label>
+                          <div className="flex flex-wrap gap-2">
+                            {commonSizes.map((size) => (
+                              <button
+                                key={size}
+                                onClick={() => setOrderSize(orderSize === size ? "" : size)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                  orderSize === size
+                                    ? "bg-purple-600 text-white shadow-md"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Notes supplémentaires (optionnel)</label>
+                          <textarea
+                            value={orderNotes}
+                            onChange={(e) => setOrderNotes(e.target.value)}
+                            placeholder="Ex: Précisez la couleur exacte, variante, ou toute demande spéciale..."
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none resize-none text-gray-700"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Pricing */}
+                      <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-2xl p-5 mb-6 border border-purple-100">
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <ShoppingCart size={18} className="text-purple-600" />
+                          Récapitulatif
+                        </h3>
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Prix AliExpress</span>
-                            <span className="font-semibold text-lg">${selectedProduct.price.toFixed(2)}</span>
+                          <div className="flex justify-between items-center text-gray-600">
+                            <span>Prix unitaire</span>
+                            <span className="font-medium">${selectedProduct.price.toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Frais de service</span>
-                            <span className="font-semibold text-orange-600">${calculateTotalPrice(selectedProduct.price).fee.toFixed(2)}</span>
+                          <div className="flex justify-between items-center text-gray-600">
+                            <span>Quantité</span>
+                            <span className="font-medium">× {orderQuantity}</span>
                           </div>
-                          <div className="flex justify-between items-center pt-3 border-t-2 border-purple-200">
+                          <div className="flex justify-between items-center text-gray-600">
+                            <span>Sous-total produit</span>
+                            <span className="font-semibold">${(selectedProduct.price * orderQuantity).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-orange-600">
+                            <span>Frais de service</span>
+                            <span className="font-semibold">${calculateTotalPrice(selectedProduct.price * orderQuantity).fee.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-4 border-t-2 border-purple-200">
                             <span className="font-bold text-lg text-gray-900">Total à payer</span>
-                            <span className="font-extrabold text-2xl text-purple-700">
-                              ${calculateTotalPrice(selectedProduct.price).total.toFixed(2)}
+                            <span className="font-extrabold text-2xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                              ${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-3 mt-auto">
+                      {/* Action Buttons */}
+                      <div className="space-y-3">
                         <a
-                          href={`https://wa.me/50932836938?text=${encodeURIComponent(`Bonjour! Je souhaite commander ce produit AliExpress:\n\n📦 ${selectedProduct.title}\n💵 Prix total: $${calculateTotalPrice(selectedProduct.price).total.toFixed(2)}\n🔗 ${selectedProduct.url}`)}`}
+                          href={`https://wa.me/50932836938?text=${encodeURIComponent(
+`🛒 *NOUVELLE COMMANDE ALIEXPRESS*
+
+📦 *Produit:* ${selectedProduct.title}
+
+📊 *Détails de la commande:*
+• Quantité: ${orderQuantity}${orderColor ? `\n• Couleur: ${orderColor}` : ''}${orderSize ? `\n• Taille: ${orderSize}` : ''}${orderNotes ? `\n• Notes: ${orderNotes}` : ''}
+
+💰 *Prix:*
+• Prix unitaire: $${selectedProduct.price.toFixed(2)}
+• Sous-total: $${(selectedProduct.price * orderQuantity).toFixed(2)}
+• Frais de service: $${calculateTotalPrice(selectedProduct.price * orderQuantity).fee.toFixed(2)}
+• *TOTAL: $${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}*
+
+🔗 *Lien du produit:*
+${selectedProduct.url}
+
+Merci de confirmer ma commande!`
+                          )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3"
+                          className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
                         >
                           <MessageCircle size={24} />
                           Commander sur WhatsApp
@@ -536,14 +775,30 @@ export default function AliExpressPage() {
                     </div>
                   </div>
 
-                  <div className="mt-8 bg-green-50 rounded-2xl p-5">
-                    <h4 className="font-bold text-green-800 mb-3">📦 Prochaines étapes</h4>
-                    <ol className="text-sm text-green-700 space-y-2">
-                      <li>1. Cliquez sur "Commander sur WhatsApp"</li>
-                      <li>2. Confirmez votre commande avec notre équipe</li>
-                      <li>3. Payez via MonCash, cash ou carte bancaire</li>
-                      <li>4. Récupérez votre colis à Champin (délai: 7-15 jours)</li>
-                    </ol>
+                  {/* Next Steps */}
+                  <div className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                    <h4 className="font-bold text-green-800 mb-4 flex items-center gap-2">
+                      <Clock size={20} />
+                      Prochaines étapes après votre commande
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {[
+                        { step: "1", title: "Confirmez", desc: "Via WhatsApp avec notre équipe" },
+                        { step: "2", title: "Payez", desc: "MonCash, Cash ou Carte" },
+                        { step: "3", title: "Suivez", desc: "Recevez votre numéro de tracking" },
+                        { step: "4", title: "Récupérez", desc: "À Champin en 7-15 jours" },
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {item.step}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-green-800">{item.title}</p>
+                            <p className="text-sm text-green-600">{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -594,4 +849,9 @@ export default function AliExpressPage() {
       </section>
     </div>
   );
+}
+
+// Default export with Suspense wrapper for useSearchParams
+export default function AliExpressPage() {
+  return <AliExpressContent />;
 }

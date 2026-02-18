@@ -12,8 +12,6 @@ import { useCart } from '@/app/context/CartContext';
 
 export default function Home() {
   const [productQuery, setProductQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -120,46 +118,113 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AliExpress Search - MISE EN AVANT */}
-      <section className="w-full bg-gradient-to-r from-blue-700 to-purple-700 py-16 px-4 text-white flex flex-col items-center mb-12 shadow-2xl border-b-4 border-purple-300">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-6 drop-shadow-xl">Commandez sur AliExpress avec nous</h1>
-        <p className="text-lg md:text-xl text-center mb-8 max-w-2xl">Trouvez n'importe quel produit sur AliExpress, envoyez-nous le lien ou la référence, et nous nous occupons de tout ! <span className="font-bold">Paiement local (MonCash, cash, carte)</span>, livraison rapide à Champin.</p>
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 w-full max-w-xl mx-auto">
-          <input
-            type="text"
-            value={productQuery}
-            onChange={e => setProductQuery(e.target.value)}
-            placeholder="Recherchez un produit AliExpress..."
-            className="flex-1 px-6 py-4 rounded-xl border-2 border-white focus:border-purple-400 text-lg text-blue-900 bg-white placeholder-gray-400 shadow"
-          />
-          {/* Recherche par défaut */}
-          {!productQuery && (
-            <button
-              type="button"
-              className="px-6 py-3 rounded-xl bg-white text-blue-700 font-bold border border-purple-300 shadow hover:bg-purple-50 transition-all"
-              onClick={() => setProductQuery('smartphone')}
-            >
-              Exemple : smartphone
-            </button>
-          )}
-          <button type="submit" className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-lg shadow hover:from-purple-700 hover:to-blue-700 transition-all flex items-center gap-2">
-            <Search size={22} /> Rechercher
-          </button>
-        </form>
-        {error && <div className="mt-4 text-red-200 font-semibold">{error}</div>}
-        {loading && <div className="mt-6 text-lg font-bold animate-pulse">Recherche en cours...</div>}
-        {searchResults.length > 0 && (
-          <div className="mt-10 w-full max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-8">
-            {searchResults.map((item, idx) => (
-              <div key={idx} className="bg-white text-blue-900 rounded-2xl shadow-lg p-6 flex flex-col items-center">
-                <img src={item.product_main_image_url} alt={item.product_title} className="w-32 h-32 object-contain mb-4" />
-                <div className="font-bold text-lg mb-2 text-center">{item.product_title}</div>
-                <div className="text-purple-700 font-semibold mb-2">{item.app_sale_price} $</div>
-                <a href={item.product_detail_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm mb-2">Voir sur AliExpress</a>
-              </div>
-            ))}
+      {/* AliExpress Search - PREMIUM SECTION */}
+      <section className="relative w-full py-20 px-4 overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600">
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-10 left-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+            <div className="absolute top-40 right-10 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute bottom-10 left-1/2 w-72 h-72 bg-red-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
           </div>
-        )}
+        </div>
+        
+        <div className="relative z-10 max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
+              <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+              <span className="text-white text-sm font-semibold">Service actif 24/7</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-4 drop-shadow-xl">
+              Commandez sur <span className="text-yellow-300">AliExpress</span>
+            </h2>
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
+              Des millions de produits à portée de main. Nous achetons pour vous et livrons directement à <span className="font-bold text-yellow-200">Champin, Cap-Haïtien</span>.
+            </p>
+          </div>
+
+          {/* Search Box */}
+          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
+            <form onSubmit={handleSearch} className="flex flex-col gap-4">
+              <div className="relative">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
+                <input
+                  type="text"
+                  value={productQuery}
+                  onChange={e => setProductQuery(e.target.value)}
+                  placeholder="Que recherchez-vous ? (ex: écouteurs, montre, téléphone...)"
+                  className="w-full pl-14 pr-6 py-5 rounded-2xl border-0 text-lg text-gray-900 bg-white placeholder-gray-400 shadow-lg focus:outline-none focus:ring-4 focus:ring-orange-300"
+                />
+              </div>
+              
+              {/* Quick Search Tags */}
+              <div className="flex flex-wrap gap-2 justify-center">
+                {['Smartphone', 'Écouteurs', 'Montre', 'LED', 'Accessoires'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setProductQuery(tag)}
+                    className="px-4 py-2 bg-white/20 text-white rounded-full text-sm font-medium hover:bg-white/30 transition-all border border-white/30"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full md:w-auto md:mx-auto px-12 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-bold text-lg shadow-xl hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 flex items-center justify-center gap-3"
+              >
+                <Search size={22} />
+                Rechercher sur AliExpress
+              </button>
+            </form>
+            {error && <div className="mt-4 text-center text-red-200 font-semibold bg-red-500/20 py-2 rounded-lg">{error}</div>}
+          </div>
+
+          {/* Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <ShoppingCart className="text-white" size={24} />
+              </div>
+              <div>
+                <h4 className="text-white font-bold">Paiement local</h4>
+                <p className="text-white/70 text-sm">MonCash, Cash, Carte</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Truck className="text-white" size={24} />
+              </div>
+              <div>
+                <h4 className="text-white font-bold">Livraison rapide</h4>
+                <p className="text-white/70 text-sm">7-15 jours à Champin</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                <Headphones className="text-white" size={24} />
+              </div>
+              <div>
+                <h4 className="text-white font-bold">Support WhatsApp</h4>
+                <p className="text-white/70 text-sm">Assistance complète</p>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center mt-8">
+            <Link
+              href="/aliexpress"
+              className="inline-flex items-center gap-2 text-white font-semibold hover:text-yellow-200 transition-colors"
+            >
+              Accéder à la page complète AliExpress
+              <ChevronRight size={20} />
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* Nos produits - 4 max */}
