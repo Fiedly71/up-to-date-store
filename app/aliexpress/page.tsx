@@ -73,6 +73,8 @@ function AliExpressContent() {
   const [user, setUser] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderSaved, setOrderSaved] = useState(false);
 
   const MONCASH_NUMBER = "39934388";
 
@@ -230,6 +232,7 @@ function AliExpressContent() {
     setOrderNotes("");
     setOrderColor("");
     setOrderSize("");
+    setOrderSaved(false);
 
     try {
       const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_detail_2?itemId=${itemId}`, {
@@ -315,6 +318,52 @@ function AliExpressContent() {
   const calculateTotalPrice = (price: number) => {
     const breakdown = getPriceBreakdown(price);
     return { basePrice: price, fee: breakdown.fee, total: breakdown.total };
+  };
+
+  // Save order to database when client confirms
+  const saveOrderToDatabase = async (paymentMethod: "whatsapp" | "moncash"): Promise<boolean> => {
+    if (!user || !selectedProduct || orderSaved || savingOrder) return false;
+
+    setSavingOrder(true);
+    try {
+      const priceInfo = calculateTotalPrice(selectedProduct.price * orderQuantity);
+
+      const orderDetails = [
+        `Quantité: ${orderQuantity}`,
+        orderColor ? `Couleur: ${orderColor}` : null,
+        orderSize ? `Taille: ${orderSize}` : null,
+        orderNotes ? `Notes client: ${orderNotes}` : null,
+        `Paiement: ${paymentMethod === "moncash" ? "MonCash" : "WhatsApp"}`,
+      ].filter(Boolean).join(" | ");
+
+      const imageUrl = selectedProduct.images?.[0]
+        ? (selectedProduct.images[0].startsWith("//") ? `https:${selectedProduct.images[0]}` : selectedProduct.images[0])
+        : "";
+
+      const res = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email,
+          productName: selectedProduct.title,
+          productUrl: selectedProduct.url,
+          productImage: imageUrl,
+          basePrice: selectedProduct.price * orderQuantity,
+          serviceFee: priceInfo.fee,
+          totalWithFees: priceInfo.total,
+          notes: orderDetails,
+        }),
+      });
+
+      if (!res.ok) return false;
+      setOrderSaved(true);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setSavingOrder(false);
+    }
   };
 
   return (
@@ -803,18 +852,35 @@ function AliExpressContent() {
                         {/* Order Buttons - Only show when logged in */}
                         {user && (
                           <>
-                            {/* MonCash Payment */}
-                            <button
-                              onClick={() => setShowMonCashModal(true)}
-                              className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
-                            >
-                              <Wallet size={24} />
-                              Payer avec MonCash
-                            </button>
+                            {/* Order saved confirmation */}
+                            {orderSaved && (
+                              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-200 text-center">
+                                <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
+                                <h4 className="text-lg font-bold text-green-800 mb-1">Commande enregistrée !</h4>
+                                <p className="text-green-700 text-sm mb-3">Votre commande a été sauvegardée. Suivez son état dans &quot;Mes Commandes&quot;.</p>
+                                <Link href="/my-orders" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition text-sm">
+                                  <Package size={16} /> Voir mes commandes
+                                </Link>
+                              </div>
+                            )}
+
+                            {!orderSaved && (
+                              <>
+                                {/* MonCash Payment */}
+                                <button
+                                  onClick={() => setShowMonCashModal(true)}
+                                  disabled={savingOrder}
+                                  className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
+                                >
+                                  <Wallet size={24} />
+                                  Payer avec MonCash
+                                </button>
                             
-                            {/* WhatsApp Order */}
-                            <a
-                              href={`https://wa.me/50932836938?text=${encodeURIComponent(
+                                {/* WhatsApp Order */}
+                                <button
+                                  onClick={async () => {
+                                    await saveOrderToDatabase("whatsapp");
+                                    window.open(`https://wa.me/50932836938?text=${encodeURIComponent(
 `🛒 *NOUVELLE COMMANDE ALIEXPRESS*
 
 👤 *Client:* ${user.email}
@@ -836,14 +902,20 @@ _(Taux: 1 USD = ${USD_TO_GDS_RATE} GDS)_
 ${selectedProduct.url}
 
 Merci de confirmer ma commande!`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
-                            >
-                              <MessageCircle size={24} />
-                              Commander sur WhatsApp
-                            </a>
+                                    )}`, '_blank');
+                                  }}
+                                  disabled={savingOrder}
+                                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
+                                >
+                                  {savingOrder ? (
+                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <MessageCircle size={24} />
+                                  )}
+                                  Commander sur WhatsApp
+                                </button>
+                              </>
+                            )}
                           </>
                         )}
                         <a
@@ -1018,13 +1090,15 @@ Merci de confirmer ma commande!`
                 </ul>
 
                 {/* Confirm Button */}
-                <a
-                  href={`https://wa.me/50932836938?text=${encodeURIComponent(
+                <button
+                  onClick={async () => {
+                    await saveOrderToDatabase("moncash");
+                    window.open(`https://wa.me/50932836938?text=${encodeURIComponent(
 `💳 *PAIEMENT MONCASH EFFECTUÉ*
 
-� *Client:* ${user?.email || 'Non connecté'}
+👤 *Client:* ${user?.email || 'Non connecté'}
 
-�📦 *Commande:* ${selectedProduct.title}
+📦 *Commande:* ${selectedProduct.title}
 
 📊 *Détails:*
 • Quantité: ${orderQuantity}${orderColor ? `\n• Couleur: ${orderColor}` : ''}${orderSize ? `\n• Taille: ${orderSize}` : ''}${orderNotes ? `\n• Notes: ${orderNotes}` : ''}
@@ -1038,14 +1112,19 @@ Merci de confirmer ma commande!`
 🔗 *Produit:* ${selectedProduct.url}
 
 ⏳ J'attends la confirmation de mon paiement. Merci!`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 mt-4"
+                    )}`, '_blank');
+                    setShowMonCashModal(false);
+                  }}
+                  disabled={savingOrder || orderSaved}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50"
                 >
-                  <MessageCircle size={22} />
+                  {savingOrder ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <MessageCircle size={22} />
+                  )}
                   J&apos;ai payé - Confirmer sur WhatsApp
-                </a>
+                </button>
 
                 <button
                   onClick={() => setShowMonCashModal(false)}

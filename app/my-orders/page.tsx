@@ -30,6 +30,18 @@ const ORDER_STATUS_CONFIG: { [key: string]: { label: string; color: string; icon
     icon: Truck,
     description: "Votre colis est en route vers notre entrepôt à Miami"
   },
+  arrived_miami: {
+    label: "Arrivé à Miami",
+    color: "bg-indigo-100 text-indigo-800 border-indigo-300",
+    icon: MapPin,
+    description: "Votre colis est arrivé à notre entrepôt de Miami"
+  },
+  shipped_to_haiti: {
+    label: "En route vers Haïti",
+    color: "bg-cyan-100 text-cyan-800 border-cyan-300",
+    icon: Truck,
+    description: "Votre colis est en route de Miami vers Haïti"
+  },
   arrived_haiti: {
     label: "Arrivé en Haïti",
     color: "bg-green-100 text-green-800 border-green-300",
@@ -270,7 +282,9 @@ export default function MyOrdersPage() {
                         <div className="flex justify-between text-xs text-gray-500 mb-2">
                           <span>Paiement</span>
                           <span>Traitement</span>
+                          <span>→ Miami</span>
                           <span>Miami</span>
+                          <span>→ Haïti</span>
                           <span>Haïti</span>
                           <span>Livré</span>
                         </div>
@@ -278,10 +292,12 @@ export default function MyOrdersPage() {
                           <div
                             className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
                             style={{
-                              width: order.order_status === 'awaiting_payment' ? '10%'
-                                : order.order_status === 'processing' ? '30%'
-                                : order.order_status === 'shipped_to_miami' ? '55%'
-                                : order.order_status === 'arrived_haiti' ? '80%'
+                              width: order.order_status === 'awaiting_payment' ? '7%'
+                                : order.order_status === 'processing' ? '21%'
+                                : order.order_status === 'shipped_to_miami' ? '36%'
+                                : order.order_status === 'arrived_miami' ? '50%'
+                                : order.order_status === 'shipped_to_haiti' ? '64%'
+                                : order.order_status === 'arrived_haiti' ? '79%'
                                 : order.order_status === 'delivered' ? '100%'
                                 : '0%'
                             }}

@@ -768,7 +768,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-8 text-center text-gray-500 text-sm">
-            &copy; 2026 Up-to-date Electronic Store. Tous droits réservés.<br />
+            &copy; {new Date().getFullYear()} Up-to-date Electronic Store. Tous droits réservés.<br />
             <span className="text-gray-400">Site made by </span>
             <a href="https://www.gf-digital-studio.space/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold">GF DIGITAL STUDIO</a>
           </div>

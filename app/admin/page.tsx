@@ -18,6 +18,8 @@ const ORDER_STATUSES = [
   { value: "awaiting_payment", label: "En attente de paiement", color: "bg-yellow-200 text-yellow-900 border-yellow-400" },
   { value: "processing", label: "En traitement", color: "bg-blue-200 text-blue-900 border-blue-400" },
   { value: "shipped_to_miami", label: "Expédié vers Miami", color: "bg-purple-200 text-purple-900 border-purple-400" },
+  { value: "arrived_miami", label: "Arrivé à Miami", color: "bg-indigo-200 text-indigo-900 border-indigo-400" },
+  { value: "shipped_to_haiti", label: "En route vers Haïti", color: "bg-cyan-200 text-cyan-900 border-cyan-400" },
   { value: "arrived_haiti", label: "Arrivé en Haïti", color: "bg-green-200 text-green-900 border-green-400" },
   { value: "delivered", label: "Livré", color: "bg-emerald-200 text-emerald-900 border-emerald-400" },
   { value: "cancelled", label: "Annulé", color: "bg-red-200 text-red-900 border-red-400" },
@@ -374,29 +376,49 @@ export default function AdminPanel() {
                           </div>
                           {/* Expanded details */}
                           {isExpanded && (
-                            <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-blue-50/50">
-                              <div className="space-y-2 text-sm">
-                                <p><span className="font-semibold text-gray-700">ID:</span> <span className="text-gray-600 text-xs">{order.id}</span></p>
-                                <p><span className="font-semibold text-gray-700">Client:</span> {order.user_email || "-"}</p>
-                                <p><span className="font-semibold text-gray-700">Produit:</span> {productName}</p>
-                                {order.ali_item_id && <p><span className="font-semibold text-gray-700">AliExpress ID:</span> {order.ali_item_id}</p>}
-                                <p><span className="font-semibold text-gray-700">Prix total:</span> <span className="font-bold text-blue-700">${price.toFixed(2)}</span></p>
-                              </div>
-                              <div className="space-y-3">
-                                <div>
-                                  <label className="block text-xs font-semibold text-gray-600 mb-1">Tracking Miami</label>
-                                  <input type="text" value={order.miami_tracking_number || ""}
-                                    onChange={e => setAllOrders(prev => prev.map(o => o.id === order.id ? { ...o, miami_tracking_number: e.target.value } : o))}
-                                    onBlur={e => updateOrderTracking(order.id, order._table, e.target.value)}
-                                    className="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                                    placeholder="Numéro de tracking..." />
+                            <div className="px-4 pb-4 bg-blue-50/50">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2 text-sm">
+                                  <p><span className="font-semibold text-gray-700">ID:</span> <span className="text-gray-600 text-xs">{order.id}</span></p>
+                                  <p><span className="font-semibold text-gray-700">Client:</span> {order.user_email || "-"}</p>
+                                  <p><span className="font-semibold text-gray-700">Produit:</span> {productName}</p>
+                                  {order.ali_item_id && <p><span className="font-semibold text-gray-700">AliExpress ID:</span> {order.ali_item_id}</p>}
+                                  <p><span className="font-semibold text-gray-700">Prix total:</span> <span className="font-bold text-blue-700">${price.toFixed(2)}</span></p>
+                                  {order.notes && <p><span className="font-semibold text-gray-700">Détails:</span> {order.notes}</p>}
+                                  {order.product_url && (
+                                    <p><span className="font-semibold text-gray-700">Lien:</span>{" "}
+                                      <a href={order.product_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs break-all">Voir le produit</a>
+                                    </p>
+                                  )}
                                 </div>
-                                {order.haiti_tracking_number && (
-                                  <p className="text-sm"><span className="font-semibold text-gray-700">Tracking Haïti:</span> {order.haiti_tracking_number}</p>
-                                )}
-                                {order.shipping_address && (
-                                  <p className="text-sm"><span className="font-semibold text-gray-700">Adresse:</span> {order.shipping_address}</p>
-                                )}
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Tracking Miami</label>
+                                    <input type="text" value={order.miami_tracking_number || ""}
+                                      onChange={e => setAllOrders(prev => prev.map(o => o.id === order.id ? { ...o, miami_tracking_number: e.target.value } : o))}
+                                      onBlur={e => updateOrderTracking(order.id, order._table, e.target.value)}
+                                      className="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                      placeholder="Numéro de tracking..." />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Tracking Haïti</label>
+                                    <input type="text" value={order.haiti_tracking_number || ""}
+                                      onChange={e => setAllOrders(prev => prev.map(o => o.id === order.id ? { ...o, haiti_tracking_number: e.target.value } : o))}
+                                      onBlur={e => {
+                                        setSavingOrder(order.id);
+                                        fetch("/api/admin/update-order", {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ userId: currentUserId, orderId: order.id, table: order._table, updates: { haiti_tracking_number: e.target.value } }),
+                                        }).finally(() => setSavingOrder(null));
+                                      }}
+                                      className="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                      placeholder="Numéro de tracking Haïti..." />
+                                  </div>
+                                  {order.product_image && (
+                                    <img src={order.product_image} alt="" className="w-20 h-20 object-contain rounded-lg bg-white border border-gray-200" />
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
@@ -552,21 +574,39 @@ export default function AdminPanel() {
                             </div>
                             {isExpanded && (
                               <div className="px-4 pb-4 bg-purple-50/50">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2"><User size={14} className="text-gray-400" /><span className="font-semibold">Prénom:</span> {u.first_name || "-"}</div>
-                                    <div className="flex items-center gap-2"><User size={14} className="text-gray-400" /><span className="font-semibold">Nom:</span> {u.last_name || "-"}</div>
-                                    <div className="flex items-center gap-2"><Mail size={14} className="text-gray-400" /><span className="font-semibold">Email:</span> {u.email}</div>
+                                <div className="bg-white rounded-xl border border-purple-200 p-5 shadow-sm">
+                                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-purple-100">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow">
+                                      {(u.first_name || u.email || "?")[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-gray-900 text-lg">{u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : "Nom non renseigné"}</p>
+                                      <p className="text-sm text-gray-500">{u.is_admin ? "Administrateur" : "Client"}</p>
+                                    </div>
                                   </div>
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2"><Phone size={14} className="text-gray-400" /><span className="font-semibold">Téléphone:</span> {u.phone || "-"}</div>
-                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /><span className="font-semibold">Ville:</span> {u.city || "-"}</div>
-                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /><span className="font-semibold">Adresse:</span> {u.address || "-"}</div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                                      <Mail size={16} className="text-purple-500 flex-shrink-0" />
+                                      <div><p className="text-xs text-gray-400 font-semibold">Email</p><p className="text-gray-900 font-medium break-all">{u.email}</p></div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                                      <Phone size={16} className="text-purple-500 flex-shrink-0" />
+                                      <div><p className="text-xs text-gray-400 font-semibold">Téléphone</p><p className="text-gray-900 font-medium">{u.phone || "Non renseigné"}</p></div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                                      <MapPin size={16} className="text-purple-500 flex-shrink-0" />
+                                      <div><p className="text-xs text-gray-400 font-semibold">Ville</p><p className="text-gray-900 font-medium">{u.city || "Non renseignée"}</p></div>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                                      <MapPin size={16} className="text-purple-500 flex-shrink-0" />
+                                      <div><p className="text-xs text-gray-400 font-semibold">Adresse</p><p className="text-gray-900 font-medium">{u.address || "Non renseignée"}</p></div>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex gap-4 mt-3 text-xs text-gray-400">
-                                  {u.created_at && <span>Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR')}</span>}
-                                  {u.last_sign_in_at && <span>Dernière connexion: {new Date(u.last_sign_in_at).toLocaleDateString('fr-FR')}</span>}
+                                  <div className="flex flex-wrap gap-4 mt-4 pt-3 border-t border-purple-100 text-xs text-gray-500">
+                                    {u.created_at && <span>📅 Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>}
+                                    {u.last_sign_in_at && <span>🕐 Dernière connexion: {new Date(u.last_sign_in_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>}
+                                    <span>📦 {orderCount} commande{orderCount !== 1 ? 's' : ''}</span>
+                                  </div>
                                 </div>
                               </div>
                             )}

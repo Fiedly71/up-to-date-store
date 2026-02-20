@@ -38,12 +38,7 @@ export default function RootLayout({
       >
         <AuthCallbackGuard />
         <CartProvider>
-        {/* Announcement Bar (site-wide) */}
-        <div className="w-full bg-blue-900 text-white text-sm py-1 text-center">
-          📦 Prochain départ des USA : Vendredi prochain ! | 📲 Devis gratuit via WhatsApp.
-        </div>
-
-        <div className="pt-4">
+        <div>
           {children}
           <Analytics />
           <CookieConsent />

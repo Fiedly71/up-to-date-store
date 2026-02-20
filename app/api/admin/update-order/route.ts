@@ -25,9 +25,23 @@ export async function POST(req: NextRequest) {
   }
 
   const tableName = table === "wholesale_orders" ? "wholesale_orders" : "orders";
+
+  // Whitelist allowed update fields
+  const allowedFields = ["order_status", "miami_tracking_number", "haiti_tracking_number", "notes"];
+  const sanitizedUpdates: Record<string, any> = {};
+  for (const key of allowedFields) {
+    if (key in updates) {
+      sanitizedUpdates[key] = updates[key];
+    }
+  }
+
+  if (Object.keys(sanitizedUpdates).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+  }
+
   const { error } = await supabaseAdmin
     .from(tableName)
-    .update(updates)
+    .update(sanitizedUpdates)
     .eq("id", orderId);
 
   if (error) {

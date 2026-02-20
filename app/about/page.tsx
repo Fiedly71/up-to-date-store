@@ -2,19 +2,14 @@
 
 import Navbar from "@/app/components/Navbar";
 import Link from "next/link";
-import { MessageCircle, Truck, MapPin } from "lucide-react";
+import { Truck, MapPin } from "lucide-react";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Announcement Bar */}
-      <div className="w-full bg-blue-900 text-white text-sm py-1 text-center fixed top-0 left-0 z-50">
-        📦 Prochain départ des USA : Vendredi prochain ! | 📲 Devis gratuit via WhatsApp.
-      </div>
-
       <Navbar />
 
-      <main className="max-w-4xl mx-auto p-6 pt-12">
+      <main className="max-w-4xl mx-auto p-6 pt-8">
         <div className="flex items-center gap-3 mb-6">
           <Truck className="text-blue-600" size={32} />
           <h1 className="font-bold text-2xl sm:text-3xl">À propos</h1>
@@ -59,18 +54,6 @@ export default function About() {
           </div>
         </section>
       </main>
-
-      {/* Floating WhatsApp Button (fixed, very high z-index) */}
-      <a
-        href="https://wa.me/50932836938"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="WhatsApp"
-        className="fixed bottom-6 right-6 z-[9999] bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-transform transform hover:scale-110 flex items-center justify-center"
-      >
-        <MessageCircle size={22} />
-      </a>
-
     </div>
   );
 }

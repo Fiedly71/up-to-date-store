@@ -1,5 +1,3 @@
-import { supabase } from "@/app/utils/supabaseClient";
-
 // Taux de change: 1 USD = 140 GDS
 export const USD_TO_GDS_RATE = 140;
 

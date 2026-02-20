@@ -1,7 +1,15 @@
+import Navbar from "@/app/components/Navbar";
+import Link from "next/link";
+
 export default function TermsPage() {
   return (
-    <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 py-16">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <Navbar />
+    <section className="py-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-4">
+          <Link href="/" className="text-blue-600 hover:text-blue-800 font-semibold">&larr; Retour à l'accueil</Link>
+        </div>
         <div className="premium-card rounded-2xl p-8 bg-white">
           <h1 className="text-3xl font-extrabold mb-6">Conditions Générales d’Utilisation</h1>
           <h2 className="text-xl font-bold mt-6 mb-3">1. Objet</h2>
@@ -39,6 +47,5 @@ export default function TermsPage() {
           <p className="text-gray-700 mb-4">Les présentes Conditions sont régies par les lois d’Haïti.</p>
         </div>
       </div>
-    </section>
-  );
+    </section>    </div>  );
 }
