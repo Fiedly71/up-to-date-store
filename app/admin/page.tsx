@@ -4,7 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
 import {
   Package, Users, Settings, Shield, ShieldOff, RefreshCw, Search, ChevronDown,
-  DollarSign, Calendar, TrendingUp, Eye, MapPin, Phone, Mail, User, BarChart3
+  DollarSign, Calendar, TrendingUp, Eye, MapPin, Phone, Mail, User, BarChart3,
+  UserPlus, Trash2, X, Lock
 } from "lucide-react";
 
 const supabase = createClient(
@@ -35,6 +36,17 @@ export default function AdminPanel() {
   const [savingUser, setSavingUser] = useState<string | null>(null);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+
+  // Create user modal
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({ email: "", password: "", firstName: "", lastName: "", phone: "", city: "", address: "", makeAdmin: false });
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [createUserError, setCreateUserError] = useState("");
+  const [createUserSuccess, setCreateUserSuccess] = useState("");
+
+  // Delete user confirmation
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Revenue date filters
   const [dateFrom, setDateFrom] = useState(() => {
@@ -125,6 +137,45 @@ export default function AdminPanel() {
       setUsers(prev => prev.map(u => u.id === targetUserId ? { ...u, is_admin: !currentIsAdmin } : u));
     } catch {}
     setSavingUser(null);
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingUser(true);
+    setCreateUserError("");
+    setCreateUserSuccess("");
+    try {
+      const res = await fetch("/api/admin/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, ...newUserForm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur lors de la création");
+      setUsers(prev => [data.user, ...prev]);
+      setCreateUserSuccess(`Utilisateur ${data.user.email} créé avec succès !`);
+      setNewUserForm({ email: "", password: "", firstName: "", lastName: "", phone: "", city: "", address: "", makeAdmin: false });
+      setTimeout(() => { setShowCreateUser(false); setCreateUserSuccess(""); }, 1500);
+    } catch (err: any) {
+      setCreateUserError(err.message);
+    }
+    setCreatingUser(false);
+  };
+
+  const handleDeleteUser = async (targetUserId: string) => {
+    setDeletingUserId(targetUserId);
+    try {
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, targetUserId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setUsers(prev => prev.filter(u => u.id !== targetUserId));
+      setConfirmDeleteId(null);
+    } catch {}
+    setDeletingUserId(null);
   };
 
   const getStatusInfo = (status: string) => ORDER_STATUSES.find(s => s.value === status) || ORDER_STATUSES[0];
@@ -359,77 +410,172 @@ export default function AdminPanel() {
 
             {/* ============ USERS TAB ============ */}
             {activeTab === "users" && (
-              <section className="bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
-                  <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input type="text" placeholder="Rechercher par email, nom, téléphone, ville..." value={searchUsers} onChange={e => setSearchUsers(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" />
-                  </div>
-                </div>
-
-                {filteredUsers.length === 0 ? (
-                  <div className="px-6 py-12 text-center text-gray-500">
-                    <Users className="mx-auto mb-3 text-gray-300" size={48} />
-                    <p className="font-medium">Aucun utilisateur trouvé</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {filteredUsers.map(u => {
-                      const isExpanded = expandedUser === u.id;
-                      const orderCount = userOrderCounts[u.email] || 0;
-                      return (
-                        <div key={u.id} className="hover:bg-purple-50/30 transition">
-                          <div className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${u.is_admin ? 'bg-purple-100 text-purple-700 border border-purple-300' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
-                                  {u.is_admin ? "Admin" : "Client"}
-                                </span>
-                                {orderCount > 0 && (
-                                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{orderCount} commande{orderCount > 1 ? 's' : ''}</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Mail size={14} className="text-gray-400" />
-                                <p className="font-semibold text-gray-900">{u.email}</p>
-                              </div>
-                              <p className="text-sm text-gray-600">
-                                {u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : "Nom non renseigné"}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <button onClick={() => toggleUserAdmin(u.id, u.is_admin)} disabled={savingUser === u.id || u.id === currentUserId}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${u.is_admin ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} ${(savingUser === u.id || u.id === currentUserId) ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                {u.is_admin ? <><ShieldOff size={16} />Rétrograder</> : <><Shield size={16} />Promouvoir</>}
-                              </button>
-                              <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
-                                <Eye size={18} />
-                              </button>
-                            </div>
+              <section className="space-y-4">
+                {/* Create User Modal */}
+                {showCreateUser && (
+                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCreateUser(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2"><UserPlus size={22} className="text-purple-600" /> Créer un utilisateur</h3>
+                        <button onClick={() => setShowCreateUser(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X size={20} /></button>
+                      </div>
+                      <form onSubmit={handleCreateUser} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Prénom</label>
+                            <input type="text" value={newUserForm.firstName} onChange={e => setNewUserForm(p => ({ ...p, firstName: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Jean" />
                           </div>
-                          {isExpanded && (
-                            <div className="px-4 pb-4 bg-purple-50/50">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2"><User size={14} className="text-gray-400" /><span className="font-semibold">Prénom:</span> {u.first_name || "-"}</div>
-                                  <div className="flex items-center gap-2"><User size={14} className="text-gray-400" /><span className="font-semibold">Nom:</span> {u.last_name || "-"}</div>
-                                  <div className="flex items-center gap-2"><Mail size={14} className="text-gray-400" /><span className="font-semibold">Email:</span> {u.email}</div>
-                                </div>
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2"><Phone size={14} className="text-gray-400" /><span className="font-semibold">Téléphone:</span> {u.phone || "-"}</div>
-                                  <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /><span className="font-semibold">Ville:</span> {u.city || "-"}</div>
-                                  <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /><span className="font-semibold">Adresse:</span> {u.address || "-"}</div>
-                                </div>
-                              </div>
-                              {u.created_at && <p className="text-xs text-gray-400 mt-3">Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR')}</p>}
-                            </div>
-                          )}
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Nom</label>
+                            <input type="text" value={newUserForm.lastName} onChange={e => setNewUserForm(p => ({ ...p, lastName: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Baptiste" />
+                          </div>
                         </div>
-                      );
-                    })}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Email *</label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input type="email" required value={newUserForm.email} onChange={e => setNewUserForm(p => ({ ...p, email: e.target.value }))}
+                              className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="email@exemple.com" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Mot de passe *</label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input type="text" required minLength={6} value={newUserForm.password} onChange={e => setNewUserForm(p => ({ ...p, password: e.target.value }))}
+                              className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Min. 6 caractères" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
+                            <input type="tel" value={newUserForm.phone} onChange={e => setNewUserForm(p => ({ ...p, phone: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="+509..." />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ville</label>
+                            <input type="text" value={newUserForm.city} onChange={e => setNewUserForm(p => ({ ...p, city: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Cap-Haïtien" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Adresse</label>
+                          <input type="text" value={newUserForm.address} onChange={e => setNewUserForm(p => ({ ...p, address: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Rue, Quartier..." />
+                        </div>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input type="checkbox" checked={newUserForm.makeAdmin} onChange={e => setNewUserForm(p => ({ ...p, makeAdmin: e.target.checked }))}
+                            className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                          <span className="text-sm font-semibold text-gray-700">Faire administrateur</span>
+                        </label>
+                        {createUserError && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold border border-red-200">{createUserError}</div>}
+                        {createUserSuccess && <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-semibold border border-green-200">{createUserSuccess}</div>}
+                        <button type="submit" disabled={creatingUser}
+                          className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50">
+                          {creatingUser ? "Création..." : "Créer l'utilisateur"}
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 )}
+
+                <div className="bg-white rounded-2xl shadow-xl border border-purple-100 overflow-hidden">
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                      <input type="text" placeholder="Rechercher par email, nom, téléphone, ville..." value={searchUsers} onChange={e => setSearchUsers(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" />
+                    </div>
+                    <button onClick={() => { setShowCreateUser(true); setCreateUserError(""); setCreateUserSuccess(""); }}
+                      className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap">
+                      <UserPlus size={18} /> Ajouter un client
+                    </button>
+                  </div>
+
+                  {filteredUsers.length === 0 ? (
+                    <div className="px-6 py-12 text-center text-gray-500">
+                      <Users className="mx-auto mb-3 text-gray-300" size={48} />
+                      <p className="font-medium">Aucun utilisateur trouvé</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {filteredUsers.map(u => {
+                        const isExpanded = expandedUser === u.id;
+                        const orderCount = userOrderCounts[u.email] || 0;
+                        return (
+                          <div key={u.id} className="hover:bg-purple-50/30 transition">
+                            <div className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${u.is_admin ? 'bg-purple-100 text-purple-700 border border-purple-300' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                                    {u.is_admin ? "Admin" : "Client"}
+                                  </span>
+                                  {orderCount > 0 && (
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{orderCount} commande{orderCount > 1 ? 's' : ''}</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Mail size={14} className="text-gray-400" />
+                                  <p className="font-semibold text-gray-900">{u.email}</p>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                  {u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : "Nom non renseigné"}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <button onClick={() => toggleUserAdmin(u.id, u.is_admin)} disabled={savingUser === u.id || u.id === currentUserId}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${u.is_admin ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} ${(savingUser === u.id || u.id === currentUserId) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                  {u.is_admin ? <><ShieldOff size={16} />Rétrograder</> : <><Shield size={16} />Promouvoir</>}
+                                </button>
+                                {confirmDeleteId === u.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={() => handleDeleteUser(u.id)} disabled={deletingUserId === u.id}
+                                      className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 disabled:opacity-50">
+                                      {deletingUserId === u.id ? "..." : "Confirmer"}
+                                    </button>
+                                    <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-2 bg-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-300">
+                                      <X size={16} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setConfirmDeleteId(u.id)} disabled={u.id === currentUserId}
+                                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 ${u.id === currentUserId ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                                <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+                                  <Eye size={18} />
+                                </button>
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <div className="px-4 pb-4 bg-purple-50/50">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2"><User size={14} className="text-gray-400" /><span className="font-semibold">Prénom:</span> {u.first_name || "-"}</div>
+                                    <div className="flex items-center gap-2"><User size={14} className="text-gray-400" /><span className="font-semibold">Nom:</span> {u.last_name || "-"}</div>
+                                    <div className="flex items-center gap-2"><Mail size={14} className="text-gray-400" /><span className="font-semibold">Email:</span> {u.email}</div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2"><Phone size={14} className="text-gray-400" /><span className="font-semibold">Téléphone:</span> {u.phone || "-"}</div>
+                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /><span className="font-semibold">Ville:</span> {u.city || "-"}</div>
+                                    <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" /><span className="font-semibold">Adresse:</span> {u.address || "-"}</div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-4 mt-3 text-xs text-gray-400">
+                                  {u.created_at && <span>Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR')}</span>}
+                                  {u.last_sign_in_at && <span>Dernière connexion: {new Date(u.last_sign_in_at).toLocaleDateString('fr-FR')}</span>}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </section>
             )}
 

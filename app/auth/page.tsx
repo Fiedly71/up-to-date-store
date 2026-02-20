@@ -29,6 +29,8 @@ export default function AuthPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const isManualLogin = useRef(false);
+  // Store recovery/invite tokens so session is NOT kept in localStorage
+  const savedTokens = useRef<{ access_token: string; refresh_token: string } | null>(null);
 
   // Handle email confirmation, password reset, and invitation callback
   useEffect(() => {
@@ -40,11 +42,16 @@ export default function AuthPage() {
     }
 
     // Listen for Supabase auth events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // Supabase detected a recovery link — show password reset form
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        // Save tokens in memory (NOT localStorage) then immediately clear the session
+        savedTokens.current = {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        };
         isManualLogin.current = true;
-        sessionStorage.setItem('pendingPasswordReset', 'true');
+        // Clear session from localStorage so navigating away = not logged in
+        await supabase.auth.signOut({ scope: 'local' });
         setAuthMode('reset');
         setSuccess("Entrez votre nouveau mot de passe.");
         window.history.replaceState(null, '', '/auth');
@@ -53,9 +60,13 @@ export default function AuthPage() {
 
       if (event === 'SIGNED_IN' && session) {
         if (hashType === 'invite') {
-          // Invitation link — show password creation form
+          // Save tokens in memory then clear session
+          savedTokens.current = {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          };
           isManualLogin.current = true;
-          sessionStorage.setItem('pendingPasswordReset', 'true');
+          await supabase.auth.signOut({ scope: 'local' });
           setAuthMode('reset');
           setSuccess("Bienvenue ! Créez votre mot de passe pour activer votre compte.");
           window.history.replaceState(null, '', '/auth');
@@ -141,16 +152,25 @@ export default function AuthPage() {
         throw new Error("Les mots de passe ne correspondent pas.");
       }
 
+      if (!savedTokens.current) {
+        throw new Error("Session expirée. Veuillez demander un nouveau lien de réinitialisation.");
+      }
+
+      // Restore the session temporarily using the saved tokens
+      const { error: sessionError } = await supabase.auth.setSession(savedTokens.current);
+      if (sessionError) throw sessionError;
+
+      // Update the password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) throw error;
 
-      // Sign out so user can reconnect with their new password
+      // Sign out completely so user must log in with new password
+      savedTokens.current = null;
       await supabase.auth.signOut();
       isManualLogin.current = false;
-      sessionStorage.removeItem('pendingPasswordReset');
 
       setSuccess("✅ Mot de passe créé avec succès ! Connectez-vous avec votre email et votre nouveau mot de passe.");
       setNewPassword("");
@@ -289,11 +309,8 @@ export default function AuthPage() {
           {(authMode === 'forgot' || authMode === 'reset') && (
             <button
               type="button"
-              onClick={async () => {
-                if (sessionStorage.getItem('pendingPasswordReset')) {
-                  sessionStorage.removeItem('pendingPasswordReset');
-                  await supabase.auth.signOut();
-                }
+              onClick={() => {
+                savedTokens.current = null;
                 setAuthMode('login'); setError(""); setSuccess("");
               }}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-medium"

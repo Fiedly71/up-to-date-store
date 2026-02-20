@@ -24,16 +24,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not admin" }, { status: 403 });
   }
 
-  // Fetch all data in parallel
-  const [ordersResult, wholesaleResult, profilesResult] = await Promise.all([
+  // Fetch orders + all auth users in parallel
+  const [ordersResult, wholesaleResult, usersResult] = await Promise.all([
     supabaseAdmin.from("orders").select("*").order("created_at", { ascending: false }),
     supabaseAdmin.from("wholesale_orders").select("*").order("created_at", { ascending: false }),
-    supabaseAdmin.from("profiles").select("*").order("created_at", { ascending: false }),
+    supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
   ]);
+
+  // Also fetch profiles to get is_admin status
+  const { data: profiles } = await supabaseAdmin.from("profiles").select("id, is_admin");
+  const adminMap: Record<string, boolean> = {};
+  (profiles || []).forEach((p: any) => { adminMap[p.id] = p.is_admin; });
+
+  // Map auth users to a clean format with metadata
+  const users = (usersResult.data?.users || []).map((u: any) => ({
+    id: u.id,
+    email: u.email,
+    first_name: u.user_metadata?.first_name || "",
+    last_name: u.user_metadata?.last_name || "",
+    phone: u.user_metadata?.phone || "",
+    city: u.user_metadata?.city || "",
+    address: u.user_metadata?.address || "",
+    is_admin: adminMap[u.id] || false,
+    created_at: u.created_at,
+    last_sign_in_at: u.last_sign_in_at,
+  }));
 
   return NextResponse.json({
     orders: ordersResult.data || [],
     wholesaleOrders: wholesaleResult.data || [],
-    users: profilesResult.data || [],
+    users,
   });
 }
