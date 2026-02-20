@@ -6,7 +6,7 @@ import Navbar from "../components/Navbar";
 import {
   Search, Package, Clock, Truck, CheckCircle, MapPin,
   ShoppingBag, ArrowRight, Plane, Building2,
-  CalendarDays, Info, Phone, ExternalLink, Globe, AlertTriangle
+  CalendarDays, Info, Phone, ExternalLink, UserPlus
 } from "lucide-react";
 import Link from "next/link";
 
@@ -68,22 +68,6 @@ const STATUS_DETAILS: { [key: string]: { title: string; message: string; nextSte
   }
 };
 
-interface TrackingEvent {
-  date: string;
-  status: string;
-  details: string;
-  location: string;
-}
-
-interface ExternalTracking {
-  found: boolean;
-  carrier: string;
-  status: string;
-  lastEvent: string;
-  lastCheckpoint: string;
-  events: TrackingEvent[];
-}
-
 function TrackingSearchHandler({ onSearch }: { onSearch: (tracking: string) => void }) {
   const searchParams = useSearchParams();
   const [handled, setHandled] = useState(false);
@@ -102,9 +86,7 @@ function TrackingSearchHandler({ onSearch }: { onSearch: (tracking: string) => v
 function TrackingContent() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [order, setOrder] = useState<any>(null);
-  const [externalTracking, setExternalTracking] = useState<ExternalTracking | null>(null);
   const [loading, setLoading] = useState(false);
-  const [externalLoading, setExternalLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = async (searchTerm?: string) => {
@@ -112,12 +94,9 @@ function TrackingContent() {
     if (!numberToSearch) return;
 
     setLoading(true);
-    setExternalLoading(true);
     setOrder(null);
-    setExternalTracking(null);
     setSearched(true);
 
-    // 1. Search in Supabase (both tables)
     try {
       const { data: orderData } = await supabase
         .from("wholesale_orders")
@@ -142,20 +121,6 @@ function TrackingContent() {
       // Supabase search failed silently
     }
     setLoading(false);
-
-    // 2. Always call universal tracking API
-    try {
-      const response = await fetch("/api/tracking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackingNumber: numberToSearch }),
-      });
-      const data = await response.json();
-      setExternalTracking(data);
-    } catch {
-      setExternalTracking({ found: false, carrier: "", status: "", lastEvent: "", lastCheckpoint: "", events: [] });
-    }
-    setExternalLoading(false);
   };
 
   const handleSearchFromUrl = (tracking: string) => {
@@ -172,20 +137,6 @@ function TrackingContent() {
     return STATUS_DETAILS[status] || STATUS_DETAILS.awaiting_payment;
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    try {
-      return new Date(dateStr).toLocaleDateString("fr-FR", {
-        day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-      });
-    } catch { return dateStr; }
-  };
-
-  const carrierNames: { [key: string]: string } = {
-    usps: "USPS", ups: "UPS", fedex: "FedEx", dhl: "DHL", "amazon-fba-us": "Amazon",
-    yanwen: "Yanwen", cainiao: "Cainiao (AliExpress)", "4px": "4PX", yun: "YunExpress", unknown: "Transporteur"
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <Navbar />
@@ -200,7 +151,7 @@ function TrackingContent() {
             Suivi de Colis
           </h1>
           <p className="text-gray-600 text-lg max-w-lg mx-auto">
-            Suivez n'importe quel colis — commandes Up-to-date ou tout autre numéro de suivi
+            Entrez le numéro de suivi de votre commande Up-to-date pour voir sa progression
           </p>
         </div>
 
@@ -216,16 +167,16 @@ function TrackingContent() {
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Entrez votre numéro de suivi (USPS, FedEx, UPS, DHL, AliExpress...)"
+                placeholder="Entrez votre numéro de suivi..."
                 className="w-full pl-12 pr-6 py-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg font-medium transition-all duration-300"
               />
             </div>
             <button
               onClick={() => handleSearch()}
-              disabled={loading || externalLoading}
+              disabled={loading}
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {(loading || externalLoading) ? (
+              {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Recherche...
@@ -239,12 +190,12 @@ function TrackingContent() {
             </button>
           </div>
           <div className="mt-4 text-center text-sm text-gray-500">
-            <Globe className="inline mr-1" size={14} />
-            Suivi universel — fonctionne avec tous les transporteurs (USPS, UPS, FedEx, DHL, AliExpress, Amazon...)
+            <Package className="inline mr-1" size={14} />
+            Suivi des commandes passées via Up-to-date Electronic Store
           </div>
         </div>
 
-        {/* ===== SUPABASE ORDER SECTION (if found) ===== */}
+        {/* ===== ORDER FOUND ===== */}
         {order && (
           <div className="space-y-6 mb-8">
             <div className="bg-white rounded-3xl shadow-xl border border-blue-100 overflow-hidden">
@@ -315,12 +266,12 @@ function TrackingContent() {
               </div>
             </div>
 
-            {/* Progress Timeline - Supabase */}
+            {/* Progress Timeline */}
             {order.order_status !== "cancelled" && (
               <div className="bg-white rounded-3xl shadow-xl border border-blue-100 p-6">
                 <h3 className="font-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
                   <CalendarDays size={24} className="text-purple-600" />
-                  Progression Up-to-date
+                  Progression de votre commande
                 </h3>
                 <div className="relative">
                   <div className="absolute left-8 top-0 bottom-0 w-1 bg-gray-200 rounded-full"></div>
@@ -359,124 +310,72 @@ function TrackingContent() {
           </div>
         )}
 
-        {/* ===== UNIVERSAL TRACKING SECTION (always shown after search) ===== */}
-        {searched && (
+        {/* ===== ORDER NOT FOUND ===== */}
+        {searched && !loading && !order && (
           <div className="space-y-6 mb-8">
-            <div className="bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
+            <div className="bg-white rounded-3xl shadow-xl border border-orange-100 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white">
                 <div className="flex items-center gap-3">
-                  <Globe size={28} />
+                  <Search size={28} />
                   <div>
-                    <p className="text-sm opacity-90">Suivi universel du transporteur</p>
+                    <p className="text-sm opacity-90">Aucune commande trouvée pour</p>
                     <p className="text-xl font-bold font-mono">{trackingNumber}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6">
-                {externalLoading && (
-                  <div className="flex flex-col items-center py-10">
-                    <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
-                    <p className="text-gray-600 font-medium">Recherche en cours auprès des transporteurs...</p>
-                    <p className="text-gray-400 text-sm mt-1">USPS, FedEx, UPS, DHL, AliExpress...</p>
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Package className="text-orange-500" size={40} />
+                </div>
+                <h3 className="font-bold text-2xl text-gray-900 mb-3">
+                  Ce numéro n&apos;est pas dans nos commandes
+                </h3>
+                <p className="text-gray-600 max-w-lg mx-auto mb-8">
+                  Ce numéro de suivi ne correspond à aucune commande enregistrée chez Up-to-date Electronic Store.
+                  Vérifiez le numéro ou passez une commande pour profiter de notre service de suivi.
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                  <Link href="/auth"
+                    className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all">
+                    <UserPlus size={20} />
+                    Créer un compte
+                  </Link>
+                  <Link href="/aliexpress"
+                    className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg hover:from-orange-600 hover:to-red-600 transition-all">
+                    <ShoppingBag size={20} />
+                    Commander via AliExpress
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* How it works */}
+            <div className="bg-white rounded-3xl shadow-xl border border-blue-100 p-8">
+              <h3 className="font-bold text-xl text-gray-900 mb-6 text-center">Comment ça marche ?</h3>
+              <div className="grid sm:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <UserPlus className="text-blue-600" size={28} />
                   </div>
-                )}
-
-                {!externalLoading && externalTracking?.found && externalTracking.events.length > 0 && (
-                  <>
-                    {/* Carrier & Status */}
-                    <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                          <Truck className="text-emerald-600" size={24} />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Transporteur</p>
-                          <p className="text-lg font-bold text-gray-900">
-                            {carrierNames[externalTracking.carrier] || externalTracking.carrier?.toUpperCase() || "Détecté automatiquement"}
-                          </p>
-                        </div>
-                      </div>
-                      {externalTracking.lastCheckpoint && (
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">Dernière mise à jour</p>
-                          <p className="font-semibold text-gray-800">{formatDate(externalTracking.lastCheckpoint)}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {externalTracking.lastEvent && (
-                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100 mb-6">
-                        <div className="flex items-start gap-3">
-                          <Info className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
-                          <p className="text-gray-800 font-medium">{externalTracking.lastEvent}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Events Timeline */}
-                    <h3 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                      <CalendarDays size={20} className="text-emerald-600" />
-                      Historique de suivi
-                    </h3>
-                    <div className="relative">
-                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-emerald-200"></div>
-                      <div className="space-y-4">
-                        {externalTracking.events.map((event, index) => (
-                          <div key={index} className="relative flex items-start gap-4 pl-0">
-                            <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                              index === 0 ? "bg-emerald-500 text-white shadow-md" : "bg-emerald-100 text-emerald-600"
-                            }`}>
-                              {index === 0 ? <Truck size={16} /> : <Clock size={14} />}
-                            </div>
-                            <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                              <div className="flex items-start justify-between flex-wrap gap-2">
-                                <div>
-                                  <p className="font-semibold text-gray-900">{event.details || event.status}</p>
-                                  {event.location && (
-                                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                                      <MapPin size={12} /> {event.location}
-                                    </p>
-                                  )}
-                                </div>
-                                {event.date && (
-                                  <p className="text-sm text-gray-400 whitespace-nowrap">{formatDate(event.date)}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {!externalLoading && (!externalTracking?.found || externalTracking.events.length === 0) && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <AlertTriangle className="text-amber-500" size={32} />
-                    </div>
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">
-                      {(externalTracking as any)?.error === "rate_limit"
-                        ? "Limite journalière atteinte"
-                        : order ? "Pas encore d'infos du transporteur" : "Aucune info de suivi trouvée"}
-                    </h3>
-                    <p className="text-gray-600 max-w-md mx-auto mb-4">
-                      {(externalTracking as any)?.error === "rate_limit"
-                        ? "Le service de suivi a atteint sa limite quotidienne. Veuillez réessayer demain."
-                        : order
-                          ? "Le transporteur n'a pas encore enregistré ce colis. Les informations apparaîtront ici dès que le colis sera scanné."
-                          : "Ce numéro de suivi n'a pas été trouvé. Vérifiez le numéro ou réessayez plus tard — il peut prendre 24-48h pour apparaître après l'expédition."
-                      }
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-500">
-                      <div className="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full">
-                        <Clock size={14} />
-                        <span>Réessayez dans quelques heures</span>
-                      </div>
-                    </div>
+                  <h4 className="font-bold text-gray-900 mb-1">1. Créez un compte</h4>
+                  <p className="text-sm text-gray-500">Inscrivez-vous gratuitement sur notre site</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <ShoppingBag className="text-orange-600" size={28} />
                   </div>
-                )}
+                  <h4 className="font-bold text-gray-900 mb-1">2. Passez commande</h4>
+                  <p className="text-sm text-gray-500">Trouvez votre produit AliExpress et commandez via notre site</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Truck className="text-purple-600" size={28} />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-1">3. Suivez votre colis</h4>
+                  <p className="text-sm text-gray-500">Recevez un numéro de suivi et suivez chaque étape ici</p>
+                </div>
               </div>
             </div>
           </div>
@@ -487,7 +386,7 @@ function TrackingContent() {
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100 mb-8">
             <h3 className="font-bold text-green-800 mb-2 flex items-center gap-2">
               <Phone size={20} />
-              Besoin d'aide ?
+              Besoin d&apos;aide ?
             </h3>
             <p className="text-green-700 text-sm mb-4">
               Pour toute question concernant votre colis, contactez-nous sur WhatsApp avec votre numéro de suivi.
@@ -510,14 +409,19 @@ function TrackingContent() {
             <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Package className="text-purple-500" size={48} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Suivez n'importe quel colis</h2>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Entrez votre numéro de suivi ci-dessus — que ce soit une commande Up-to-date ou un colis de n'importe quel transporteur.
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Suivez votre commande</h2>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Entrez le numéro de suivi reçu lors de votre commande pour voir la progression de votre colis en temps réel.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-2"><Truck className="text-blue-500" size={18} /><span>USPS, UPS, FedEx</span></div>
-              <div className="flex items-center gap-2"><Globe className="text-green-500" size={18} /><span>DHL, AliExpress, Amazon</span></div>
-              <div className="flex items-center gap-2"><CheckCircle className="text-purple-500" size={18} /><span>Tous les transporteurs</span></div>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/aliexpress"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all">
+                <ShoppingBag size={18} /> Commander sur AliExpress
+              </Link>
+              <Link href="/auth"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-blue-200 text-blue-700 rounded-xl font-semibold hover:bg-blue-50 transition-all">
+                <UserPlus size={18} /> Créer un compte
+              </Link>
             </div>
           </div>
         )}
