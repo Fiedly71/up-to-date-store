@@ -2,15 +2,17 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
-import { User, Mail, Lock, Phone, MapPin, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { User, Mail, Lock, Phone, MapPin, Eye, EyeOff, CheckCircle, ArrowLeft, KeyRound } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+type AuthMode = 'login' | 'signup' | 'forgot' | 'reset';
+
 export default function AuthPage() {
-  const [showLogin, setShowLogin] = useState(true);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,20 +26,35 @@ export default function AuthPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  // Handle email confirmation callback
+  // Handle email confirmation and password reset callback
   useEffect(() => {
-    // Check if this is a confirmation callback
-    const handleEmailConfirmation = async () => {
+    const handleAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       const type = hashParams.get('type');
+      const refreshToken = hashParams.get('refresh_token');
       
+      // Handle password reset callback
+      if (accessToken && type === 'recovery') {
+        // Set the session for password reset
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        });
+        setAuthMode('reset');
+        setSuccess("Entrez votre nouveau mot de passe.");
+        window.history.replaceState(null, '', '/auth');
+        return;
+      }
+
       if (accessToken && type === 'signup') {
         // Email was confirmed
         setEmailConfirmed(true);
         setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
-        setShowLogin(true);
+        setAuthMode('login');
         // Clear the hash from URL
         window.history.replaceState(null, '', '/auth');
       }
@@ -47,11 +64,11 @@ export default function AuthPage() {
       if (urlParams.get('confirmed') === 'true') {
         setEmailConfirmed(true);
         setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
-        setShowLogin(true);
+        setAuthMode('login');
       }
     };
 
-    handleEmailConfirmation();
+    handleAuthCallback();
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -76,6 +93,68 @@ export default function AuthPage() {
     return null;
   }
 
+  // Handle forgot password
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      if (!email.trim() || !email.includes("@")) {
+        throw new Error("Veuillez entrer une adresse email valide.");
+      }
+
+      const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/auth`,
+      });
+
+      if (error) throw error;
+
+      setSuccess("✅ Un email de réinitialisation a été envoyé ! Vérifiez votre boîte mail.");
+      setEmail("");
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de l'envoi de l'email.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Handle reset password (new password submission)
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      if (newPassword.length < 6) {
+        throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
+      }
+      if (newPassword !== confirmNewPassword) {
+        throw new Error("Les mots de passe ne correspondent pas.");
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      setSuccess("✅ Mot de passe modifié avec succès ! Vous pouvez maintenant vous connecter.");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setTimeout(() => {
+        setAuthMode('login');
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la modification du mot de passe.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -83,7 +162,7 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      if (showLogin) {
+      if (authMode === 'login') {
         // LOGIN
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -122,7 +201,7 @@ export default function AuthPage() {
         } else {
           window.location.href = "/my-orders";
         }
-      } else {
+      } else if (authMode === 'signup') {
         // SIGNUP - Validation
         const validationError = validateSignup();
         if (validationError) {
@@ -189,37 +268,166 @@ export default function AuthPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <User className="text-white" size={32} />
+              {authMode === 'reset' || authMode === 'forgot' ? (
+                <KeyRound className="text-white" size={32} />
+              ) : (
+                <User className="text-white" size={32} />
+              )}
             </div>
             <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
-              {showLogin ? "Connexion" : "Créer un compte"}
+              {authMode === 'login' && "Connexion"}
+              {authMode === 'signup' && "Créer un compte"}
+              {authMode === 'forgot' && "Mot de passe oublié"}
+              {authMode === 'reset' && "Nouveau mot de passe"}
             </h2>
             <p className="text-gray-600 mt-2">
-              {showLogin ? "Accédez à votre espace client" : "Rejoignez Up-to-date Store"}
+              {authMode === 'login' && "Accédez à votre espace client"}
+              {authMode === 'signup' && "Rejoignez Up-to-date Store"}
+              {authMode === 'forgot' && "Entrez votre email pour réinitialiser"}
+              {authMode === 'reset' && "Choisissez un nouveau mot de passe"}
             </p>
           </div>
 
-          {/* Toggle Buttons */}
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
+          {/* Back button for forgot/reset */}
+          {(authMode === 'forgot' || authMode === 'reset') && (
             <button
               type="button"
-              onClick={() => { setShowLogin(true); setError(""); setSuccess(""); }}
-              className={`flex-1 py-3 rounded-lg font-bold transition-all duration-300 ${showLogin ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'}`}
+              onClick={() => { setAuthMode('login'); setError(""); setSuccess(""); }}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-medium"
             >
-              Connexion
+              <ArrowLeft size={18} />
+              Retour à la connexion
             </button>
-            <button
-              type="button"
-              onClick={() => { setShowLogin(false); setError(""); setSuccess(""); }}
-              className={`flex-1 py-3 rounded-lg font-bold transition-all duration-300 ${!showLogin ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              Inscription
-            </button>
-          </div>
+          )}
 
+          {/* Toggle Buttons (only for login/signup) */}
+          {(authMode === 'login' || authMode === 'signup') && (
+            <div className="flex bg-gray-100 rounded-xl p-1 mb-8">
+              <button
+                type="button"
+                onClick={() => { setAuthMode('login'); setError(""); setSuccess(""); }}
+                className={`flex-1 py-3 rounded-lg font-bold transition-all duration-300 ${authMode === 'login' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Connexion
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMode('signup'); setError(""); setSuccess(""); }}
+                className={`flex-1 py-3 rounded-lg font-bold transition-all duration-300 ${authMode === 'signup' ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Inscription
+              </button>
+            </div>
+          )}
+
+          {/* FORGOT PASSWORD FORM */}
+          {authMode === 'forgot' && (
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">Email *</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white font-medium placeholder-gray-400"
+                    placeholder="votre@email.com"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="rounded-xl px-4 py-3 text-center font-semibold bg-red-50 text-red-700 border border-red-200">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="rounded-xl px-4 py-3 text-center font-semibold bg-green-50 text-green-700 border border-green-200">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? "Envoi en cours..." : "Envoyer le lien de réinitialisation"}
+              </button>
+            </form>
+          )}
+
+          {/* RESET PASSWORD FORM */}
+          {authMode === 'reset' && (
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">Nouveau mot de passe *</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white font-medium placeholder-gray-400"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2 text-sm">Confirmer le nouveau mot de passe *</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmNewPassword}
+                    onChange={e => setConfirmNewPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white font-medium placeholder-gray-400"
+                    placeholder="••••••••"
+                  />
+                  {confirmNewPassword && newPassword === confirmNewPassword && (
+                    <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />
+                  )}
+                </div>
+              </div>
+
+              {error && (
+                <div className="rounded-xl px-4 py-3 text-center font-semibold bg-red-50 text-red-700 border border-red-200">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="rounded-xl px-4 py-3 text-center font-semibold bg-green-50 text-green-700 border border-green-200">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? "Modification..." : "Modifier le mot de passe"}
+              </button>
+            </form>
+          )}
+
+          {/* LOGIN/SIGNUP FORM */}
+          {(authMode === 'login' || authMode === 'signup') && (
           <form onSubmit={handleAuth} className="space-y-5">
             {/* Signup Fields */}
-            {!showLogin && (
+            {authMode === 'signup' && (
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -335,8 +543,21 @@ export default function AuthPage() {
               </div>
             </div>
 
+            {/* Forgot password link (login only) */}
+            {authMode === 'login' && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('forgot'); setError(""); setSuccess(""); }}
+                  className="text-purple-600 hover:text-purple-800 text-sm font-medium hover:underline"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+            )}
+
             {/* Confirm Password (Signup only) */}
-            {!showLogin && (
+            {authMode === 'signup' && (
               <div>
                 <label className="block text-gray-700 font-semibold mb-2 text-sm">Confirmer le mot de passe *</label>
                 <div className="relative">
@@ -382,18 +603,21 @@ export default function AuthPage() {
                   </svg>
                   Chargement...
                 </span>
-              ) : showLogin ? "Se connecter" : "Créer mon compte"}
+              ) : authMode === 'login' ? "Se connecter" : "Créer mon compte"}
             </button>
           </form>
+          )}
 
           {/* Footer */}
+          {(authMode === 'login' || authMode === 'signup') && (
           <div className="mt-6 text-center text-sm text-gray-600">
-            {showLogin ? (
-              <span>Pas encore de compte ? <button className="text-purple-700 font-bold hover:underline" onClick={() => { setShowLogin(false); setError(""); setSuccess(""); }}>Créer un compte</button></span>
+            {authMode === 'login' ? (
+              <span>Pas encore de compte ? <button className="text-purple-700 font-bold hover:underline" onClick={() => { setAuthMode('signup'); setError(""); setSuccess(""); }}>Créer un compte</button></span>
             ) : (
-              <span>Déjà inscrit ? <button className="text-purple-700 font-bold hover:underline" onClick={() => { setShowLogin(true); setError(""); setSuccess(""); }}>Se connecter</button></span>
+              <span>Déjà inscrit ? <button className="text-purple-700 font-bold hover:underline" onClick={() => { setAuthMode('login'); setError(""); setSuccess(""); }}>Se connecter</button></span>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>
