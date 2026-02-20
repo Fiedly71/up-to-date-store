@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, Menu, X, ShoppingCart } from "lucide-react";
+import { MessageCircle, Menu, X, ShoppingCart, Shield } from "lucide-react";
 import { useCart } from '../context/CartContext';
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
@@ -17,6 +17,7 @@ export default function Navbar(): React.ReactElement {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { cart } = useCart();
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,17 @@ export default function Navbar(): React.ReactElement {
     async function checkUser() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
+      if (data.user) {
+        try {
+          const res = await fetch("/api/check-admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: data.user.id }),
+          });
+          const result = await res.json();
+          setIsAdmin(result.isAdmin === true);
+        } catch { setIsAdmin(false); }
+      }
       setLoading(false);
     }
     checkUser();
@@ -100,7 +112,11 @@ export default function Navbar(): React.ReactElement {
           )}
           {!loading && user && (
             <>
-              <Link href="/my-orders" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">My Orders</Link>
+              {isAdmin ? (
+                <Link href="/admin" className="ml-2 px-4 py-2 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition flex items-center gap-1"><Shield size={16} />Dashboard</Link>
+              ) : (
+                <Link href="/my-orders" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Mes commandes</Link>
+              )}
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
@@ -197,7 +213,11 @@ export default function Navbar(): React.ReactElement {
           )}
           {!loading && user && (
             <>
-              <Link href="/my-orders" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition">My Orders</Link>
+              {isAdmin ? (
+                <Link href="/admin" className="block w-full text-center mt-2 px-4 py-3 bg-purple-700 text-white rounded-xl font-semibold hover:bg-purple-800 transition" onClick={() => setMobileMenuOpen(false)}>Dashboard Admin</Link>
+              ) : (
+                <Link href="/my-orders" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition" onClick={() => setMobileMenuOpen(false)}>Mes commandes</Link>
+              )}
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();

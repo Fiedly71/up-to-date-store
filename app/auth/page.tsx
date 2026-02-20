@@ -44,6 +44,7 @@ export default function AuthPage() {
       if (event === 'PASSWORD_RECOVERY') {
         // Supabase detected a recovery link — show password reset form
         isManualLogin.current = true;
+        sessionStorage.setItem('pendingPasswordReset', 'true');
         setAuthMode('reset');
         setSuccess("Entrez votre nouveau mot de passe.");
         window.history.replaceState(null, '', '/auth');
@@ -54,6 +55,7 @@ export default function AuthPage() {
         if (hashType === 'invite') {
           // Invitation link — show password creation form
           isManualLogin.current = true;
+          sessionStorage.setItem('pendingPasswordReset', 'true');
           setAuthMode('reset');
           setSuccess("Bienvenue ! Créez votre mot de passe pour activer votre compte.");
           window.history.replaceState(null, '', '/auth');
@@ -148,6 +150,7 @@ export default function AuthPage() {
       // Sign out so user can reconnect with their new password
       await supabase.auth.signOut();
       isManualLogin.current = false;
+      sessionStorage.removeItem('pendingPasswordReset');
 
       setSuccess("✅ Mot de passe créé avec succès ! Connectez-vous avec votre email et votre nouveau mot de passe.");
       setNewPassword("");
@@ -286,7 +289,13 @@ export default function AuthPage() {
           {(authMode === 'forgot' || authMode === 'reset') && (
             <button
               type="button"
-              onClick={() => { setAuthMode('login'); setError(""); setSuccess(""); }}
+              onClick={async () => {
+                if (sessionStorage.getItem('pendingPasswordReset')) {
+                  sessionStorage.removeItem('pendingPasswordReset');
+                  await supabase.auth.signOut();
+                }
+                setAuthMode('login'); setError(""); setSuccess("");
+              }}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-medium"
             >
               <ArrowLeft size={18} />
