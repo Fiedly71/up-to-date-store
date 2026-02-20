@@ -146,13 +146,18 @@ BEGIN
   VALUES (
     NEW.id,
     NEW.email,
-    NEW.raw_user_meta_data->>'first_name',
-    NEW.raw_user_meta_data->>'last_name',
-    NEW.raw_user_meta_data->>'phone',
-    NEW.raw_user_meta_data->>'city',
-    NEW.raw_user_meta_data->>'address',
+    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+    COALESCE(NEW.raw_user_meta_data->>'city', ''),
+    COALESCE(NEW.raw_user_meta_data->>'address', ''),
     FALSE
-  );
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Log l'erreur mais ne bloque pas la création de l'utilisateur
+  RAISE WARNING 'Erreur lors de la création du profil: %', SQLERRM;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

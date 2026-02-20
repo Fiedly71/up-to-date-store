@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
 import { User, Mail, Lock, Phone, MapPin, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -23,6 +23,46 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+
+  // Handle email confirmation callback
+  useEffect(() => {
+    // Check if this is a confirmation callback
+    const handleEmailConfirmation = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+      
+      if (accessToken && type === 'signup') {
+        // Email was confirmed
+        setEmailConfirmed(true);
+        setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
+        setShowLogin(true);
+        // Clear the hash from URL
+        window.history.replaceState(null, '', '/auth');
+      }
+      
+      // Also check URL params for Supabase v2 style
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('confirmed') === 'true') {
+        setEmailConfirmed(true);
+        setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
+        setShowLogin(true);
+      }
+    };
+
+    handleEmailConfirmation();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // User just signed in after email confirmation
+        window.location.href = '/my-orders';
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Validation du formulaire signup
   function validateSignup(): string | null {
@@ -92,10 +132,12 @@ export default function AuthPage() {
         }
 
         // Create account with metadata
+        const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
+            emailRedirectTo: `${siteUrl}/auth?confirmed=true`,
             data: {
               first_name: firstName,
               last_name: lastName,
