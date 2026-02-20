@@ -32,50 +32,54 @@ export default function AuthPage() {
 
   // Handle email confirmation, password reset, and invitation callback
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const type = hashParams.get('type');
-      const refreshToken = hashParams.get('refresh_token');
-      
-      // Handle password reset OR invitation callback
-      if (accessToken && (type === 'recovery' || type === 'invite')) {
+    // Check URL hash SYNCHRONOUSLY before Supabase auto-processes it
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashType = hashParams.get('type');
+    if (hashType === 'recovery' || hashType === 'invite') {
+      isManualLogin.current = true;
+    }
+
+    // Listen for Supabase auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Supabase detected a recovery link — show password reset form
         isManualLogin.current = true;
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        });
         setAuthMode('reset');
-        setSuccess(type === 'invite'
-          ? "Bienvenue ! Créez votre mot de passe pour activer votre compte."
-          : "Entrez votre nouveau mot de passe."
-        );
+        setSuccess("Entrez votre nouveau mot de passe.");
         window.history.replaceState(null, '', '/auth');
         return;
       }
 
-      if (accessToken && type === 'signup') {
-        setEmailConfirmed(true);
-        setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
-        setAuthMode('login');
-        window.history.replaceState(null, '', '/auth');
-      }
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('confirmed') === 'true') {
-        setEmailConfirmed(true);
-        setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
-        setAuthMode('login');
-      }
-    };
+      if (event === 'SIGNED_IN' && session) {
+        if (hashType === 'invite') {
+          // Invitation link — show password creation form
+          isManualLogin.current = true;
+          setAuthMode('reset');
+          setSuccess("Bienvenue ! Créez votre mot de passe pour activer votre compte.");
+          window.history.replaceState(null, '', '/auth');
+          return;
+        }
 
-    handleAuthCallback();
+        if (hashType === 'signup') {
+          // Email confirmation
+          setEmailConfirmed(true);
+          setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
+          setAuthMode('login');
+          window.history.replaceState(null, '', '/auth');
+          return;
+        }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session && !isManualLogin.current) {
-        // Only auto-redirect if not a manual login (admin check handles that)
+        // Normal sign-in — don't auto-redirect (manual login handles it)
       }
     });
+
+    // Also check URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('confirmed') === 'true') {
+      setEmailConfirmed(true);
+      setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
+      setAuthMode('login');
+    }
 
     return () => subscription.unsubscribe();
   }, []);
