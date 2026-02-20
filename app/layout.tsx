@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from './context/CartContext'; // Importe le nouveau fichier
+import AuthCallbackGuard from './components/AuthCallbackGuard';
 import Link from "next/link";
 import { ShoppingCart, Instagram } from "lucide-react";
 import CartBadge from './components/CartBadge';
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <AuthCallbackGuard />
         <CartProvider>
         {/* Announcement Bar (site-wide) */}
         <div className="w-full bg-blue-900 text-white text-sm py-1 text-center">

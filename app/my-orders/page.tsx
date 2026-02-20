@@ -7,7 +7,8 @@ import Link from "next/link";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { detectSessionInUrl: false } }
 );
 
 const ORDER_STATUS_CONFIG: { [key: string]: { label: string; color: string; icon: any; description: string } } = {
