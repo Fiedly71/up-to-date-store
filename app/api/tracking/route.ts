@@ -9,88 +9,95 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.NEXT_PUBLIC_RAPIDAPI_KEY || "";
 
-  // Try Trackingmore API (auto-detect carrier)
+  // TrackingPackage API
   try {
-    const response = await fetch(
-      "https://trackingmore-api-v2.p.rapidapi.com/trackings/realtime",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-RapidAPI-Key": apiKey,
-          "X-RapidAPI-Host": "trackingmore-api-v2.p.rapidapi.com",
-        },
-        body: JSON.stringify({
-          tracking_number: trackingNumber,
-          carrier_code: "auto",
-        }),
-      }
-    );
+    const url = new URL("https://trackingpackage.p.rapidapi.com/TrackingPackage");
+    url.searchParams.set("trackingNumber", trackingNumber);
+
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Basic Ym9sZGNoYXQ6TGZYfm0zY2d1QzkuKz9SLw==",
+        "X-RapidAPI-Key": apiKey,
+        "X-RapidAPI-Host": "trackingpackage.p.rapidapi.com",
+      },
+    });
 
     if (response.ok) {
       const data = await response.json();
 
-      if (data?.data?.items && data.data.items.length > 0) {
-        const item = data.data.items[0];
-        const trackInfo =
-          item.origin_info?.trackinfo ||
-          item.destination_info?.trackinfo ||
-          [];
+      // Try to extract tracking events from various possible response structures
+      const events =
+        data?.trackingEvents ||
+        data?.events ||
+        data?.data?.events ||
+        data?.data?.trackingEvents ||
+        data?.result?.events ||
+        data?.shipment?.events ||
+        data?.tracking?.events ||
+        [];
 
+      const carrier =
+        data?.carrier ||
+        data?.courierName ||
+        data?.data?.carrier ||
+        data?.result?.carrier ||
+        data?.shipment?.carrier ||
+        data?.tracking?.carrier ||
+        "";
+
+      const status =
+        data?.status ||
+        data?.deliveryStatus ||
+        data?.data?.status ||
+        data?.result?.status ||
+        data?.shipment?.status ||
+        "";
+
+      const lastEvent =
+        data?.lastEvent ||
+        data?.latestEvent ||
+        data?.data?.lastEvent ||
+        (events.length > 0
+          ? events[0]?.description || events[0]?.message || events[0]?.details || events[0]?.status || ""
+          : "");
+
+      const lastCheckpoint =
+        data?.lastCheckpointTime ||
+        data?.data?.lastCheckpointTime ||
+        (events.length > 0 ? events[0]?.date || events[0]?.datetime || events[0]?.time || "" : "");
+
+      if (events.length > 0 || status || carrier) {
         return NextResponse.json({
           found: true,
-          carrier: item.carrier_code || "unknown",
-          status: item.status || "unknown",
-          lastEvent: item.latest_event || "",
-          lastCheckpoint: item.latest_checkpoint_time || "",
-          events: trackInfo.map((e: any) => ({
-            date: e.Date || e.checkpoint_date || "",
-            status: e.StatusDescription || e.checkpoint_delivery_status || "",
-            details: e.Details || e.tracking_detail || "",
-            location: e.checkpoint_delivery_substatus || "",
+          carrier: carrier || "auto",
+          status: status || "in_transit",
+          lastEvent,
+          lastCheckpoint,
+          events: events.map((e: any) => ({
+            date: e.date || e.datetime || e.time || e.timestamp || "",
+            status: e.status || e.statusDescription || "",
+            details: e.description || e.message || e.details || e.detail || e.statusDescription || "",
+            location: e.location || e.city || e.place || "",
           })),
+        });
+      }
+
+      // If the response is a flat object or has a different structure, try to use it
+      if (data && typeof data === "object" && (data.status || data.carrier || data.origin)) {
+        return NextResponse.json({
+          found: true,
+          carrier: data.carrier || data.courierName || "auto",
+          status: data.status || data.deliveryStatus || "unknown",
+          lastEvent: data.lastEvent || data.statusDescription || JSON.stringify(data).substring(0, 200),
+          lastCheckpoint: data.lastUpdate || data.lastCheckpointTime || "",
+          events: [],
         });
       }
     }
   } catch {
-    // Trackingmore failed, try fallback
-  }
-
-  // Fallback: Try Package Tracker API
-  try {
-    const response = await fetch(
-      `https://package-tracker1.p.rapidapi.com/track/${encodeURIComponent(trackingNumber)}`,
-      {
-        method: "GET",
-        headers: {
-          "X-RapidAPI-Key": apiKey,
-          "X-RapidAPI-Host": "package-tracker1.p.rapidapi.com",
-        },
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-
-      if (data?.shipments && data.shipments.length > 0) {
-        const shipment = data.shipments[0];
-        return NextResponse.json({
-          found: true,
-          carrier: shipment.carrier || "unknown",
-          status: shipment.status || "unknown",
-          lastEvent: shipment.lastEvent?.description || "",
-          lastCheckpoint: shipment.lastEvent?.date || "",
-          events: (shipment.events || []).map((e: any) => ({
-            date: e.date || "",
-            status: e.status || "",
-            details: e.description || "",
-            location: e.location || "",
-          })),
-        });
-      }
-    }
-  } catch {
-    // Fallback also failed
+    // TrackingPackage failed
   }
 
   return NextResponse.json({ found: false, events: [] });
