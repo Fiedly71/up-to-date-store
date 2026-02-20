@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
 import { User, Mail, Lock, Phone, MapPin, Eye, EyeOff, CheckCircle, ArrowLeft, KeyRound } from "lucide-react";
@@ -28,8 +28,9 @@ export default function AuthPage() {
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const isManualLogin = useRef(false);
 
-  // Handle email confirmation and password reset callback
+  // Handle email confirmation, password reset, and invitation callback
   useEffect(() => {
     const handleAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -37,29 +38,29 @@ export default function AuthPage() {
       const type = hashParams.get('type');
       const refreshToken = hashParams.get('refresh_token');
       
-      // Handle password reset callback
-      if (accessToken && type === 'recovery') {
-        // Set the session for password reset
+      // Handle password reset OR invitation callback
+      if (accessToken && (type === 'recovery' || type === 'invite')) {
+        isManualLogin.current = true;
         await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || ''
         });
         setAuthMode('reset');
-        setSuccess("Entrez votre nouveau mot de passe.");
+        setSuccess(type === 'invite'
+          ? "Bienvenue ! Créez votre mot de passe pour activer votre compte."
+          : "Entrez votre nouveau mot de passe."
+        );
         window.history.replaceState(null, '', '/auth');
         return;
       }
 
       if (accessToken && type === 'signup') {
-        // Email was confirmed
         setEmailConfirmed(true);
         setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
         setAuthMode('login');
-        // Clear the hash from URL
         window.history.replaceState(null, '', '/auth');
       }
       
-      // Also check URL params for Supabase v2 style
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('confirmed') === 'true') {
         setEmailConfirmed(true);
@@ -70,11 +71,9 @@ export default function AuthPage() {
 
     handleAuthCallback();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // User just signed in after email confirmation
-        window.location.href = '/my-orders';
+      if (event === 'SIGNED_IN' && session && !isManualLogin.current) {
+        // Only auto-redirect if not a manual login (admin check handles that)
       }
     });
 
@@ -164,8 +163,9 @@ export default function AuthPage() {
     try {
       if (authMode === 'login') {
         // LOGIN
+        isManualLogin.current = true;
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) { isManualLogin.current = false; throw error; }
         
         // Verify role and redirect - try multiple methods
         let isAdmin = false;

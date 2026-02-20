@@ -457,12 +457,16 @@ function TrackingContent() {
                       <AlertTriangle className="text-amber-500" size={32} />
                     </div>
                     <h3 className="font-bold text-lg text-gray-900 mb-2">
-                      {order ? "Pas encore d'infos du transporteur" : "Aucune info de suivi trouvée"}
+                      {(externalTracking as any)?.error === "rate_limit"
+                        ? "Limite journalière atteinte"
+                        : order ? "Pas encore d'infos du transporteur" : "Aucune info de suivi trouvée"}
                     </h3>
                     <p className="text-gray-600 max-w-md mx-auto mb-4">
-                      {order
-                        ? "Le transporteur n'a pas encore enregistré ce colis. Les informations apparaîtront ici dès que le colis sera scanné."
-                        : "Ce numéro de suivi n'a pas été trouvé. Vérifiez le numéro ou réessayez plus tard — il peut prendre 24-48h pour apparaître après l'expédition."
+                      {(externalTracking as any)?.error === "rate_limit"
+                        ? "Le service de suivi a atteint sa limite quotidienne. Veuillez réessayer demain."
+                        : order
+                          ? "Le transporteur n'a pas encore enregistré ce colis. Les informations apparaîtront ici dès que le colis sera scanné."
+                          : "Ce numéro de suivi n'a pas été trouvé. Vérifiez le numéro ou réessayez plus tard — il peut prendre 24-48h pour apparaître après l'expédition."
                       }
                     </p>
                     <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-500">
