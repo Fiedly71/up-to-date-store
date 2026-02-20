@@ -22,6 +22,7 @@ const ORDER_STATUSES = [
   { value: "shipped_to_haiti", label: "En route vers Haïti", color: "bg-cyan-200 text-cyan-900 border-cyan-400" },
   { value: "arrived_haiti", label: "Arrivé en Haïti", color: "bg-green-200 text-green-900 border-green-400" },
   { value: "delivered", label: "Livré", color: "bg-emerald-200 text-emerald-900 border-emerald-400" },
+  { value: "payment_issue", label: "⚠️ Paiement non confirmé", color: "bg-orange-200 text-orange-900 border-orange-400" },
   { value: "cancelled", label: "Annulé", color: "bg-red-200 text-red-900 border-red-400" },
 ];
 

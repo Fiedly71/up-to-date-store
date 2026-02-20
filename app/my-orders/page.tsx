@@ -54,6 +54,12 @@ const ORDER_STATUS_CONFIG: { [key: string]: { label: string; color: string; icon
     icon: CheckCircle,
     description: "Commande livrée avec succès"
   },
+  payment_issue: {
+    label: "⚠️ Paiement non confirmé",
+    color: "bg-orange-100 text-orange-800 border-orange-300",
+    icon: Clock,
+    description: "Votre paiement n'a pas pu être vérifié. Veuillez nous contacter sur WhatsApp pour régulariser."
+  },
   cancelled: {
     label: "Annulé",
     color: "bg-red-100 text-red-800 border-red-300",
