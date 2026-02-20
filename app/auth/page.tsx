@@ -141,11 +141,16 @@ export default function AuthPage() {
 
       if (error) throw error;
 
-      setSuccess("✅ Mot de passe modifié avec succès ! Vous pouvez maintenant vous connecter.");
+      // Sign out so user can reconnect with their new password
+      await supabase.auth.signOut();
+      isManualLogin.current = false;
+
+      setSuccess("✅ Mot de passe créé avec succès ! Connectez-vous avec votre email et votre nouveau mot de passe.");
       setNewPassword("");
       setConfirmNewPassword("");
       setTimeout(() => {
         setAuthMode('login');
+        setSuccess("Votre mot de passe a été défini. Connectez-vous maintenant.");
       }, 2000);
     } catch (err: any) {
       setError(err.message || "Erreur lors de la modification du mot de passe.");
@@ -167,34 +172,19 @@ export default function AuthPage() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { isManualLogin.current = false; throw error; }
         
-        // Verify role and redirect - try multiple methods
+        // Check admin via server-side API (bypasses RLS)
         let isAdmin = false;
-        
-        // Method 1: Try to get profile directly
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (profile && profile.is_admin === true) {
-          isAdmin = true;
+        try {
+          const res = await fetch("/api/check-admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: data.user.id }),
+          });
+          const result = await res.json();
+          isAdmin = result.isAdmin === true;
+        } catch {
+          isAdmin = false;
         }
-        
-        // Method 2: Also check by email if profile query failed
-        if (!profile || profileError) {
-          const { data: profileByEmail } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('email', data.user.email)
-            .single();
-          
-          if (profileByEmail && profileByEmail.is_admin === true) {
-            isAdmin = true;
-          }
-        }
-        
-        console.log('Login - User ID:', data.user.id, 'Email:', data.user.email, 'Is Admin:', isAdmin, 'Profile:', profile);
         
         if (isAdmin) {
           window.location.href = "/admin";

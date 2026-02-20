@@ -38,15 +38,22 @@ export default function AdminPanel() {
         setLoading(false);
         return;
       }
-      // Check admin status
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-      setIsAdmin(profile?.is_admin === true);
+      // Check admin status via server-side API (bypasses RLS)
+      let adminStatus = false;
+      try {
+        const res = await fetch("/api/check-admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
+        });
+        const result = await res.json();
+        adminStatus = result.isAdmin === true;
+      } catch {
+        adminStatus = false;
+      }
+      setIsAdmin(adminStatus);
 
-      if (profile?.is_admin) {
+      if (adminStatus) {
         await refreshData();
       }
       setLoading(false);
