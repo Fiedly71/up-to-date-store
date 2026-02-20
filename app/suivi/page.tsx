@@ -3,10 +3,10 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
-import { 
-  Search, Package, Clock, Truck, CheckCircle, MapPin, 
-  ShoppingBag, AlertCircle, ArrowRight, Plane, Building2,
-  CalendarDays, Info, Phone, ExternalLink
+import {
+  Search, Package, Clock, Truck, CheckCircle, MapPin,
+  ShoppingBag, ArrowRight, Plane, Building2,
+  CalendarDays, Info, Phone, ExternalLink, Globe, AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -15,89 +15,45 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Tracking stages configuration
 const TRACKING_STAGES = [
-  {
-    key: "awaiting_payment",
-    label: "Paiement",
-    icon: Clock,
-    description: "En attente du paiement",
-    color: "yellow"
-  },
-  {
-    key: "processing",
-    label: "Commande",
-    icon: ShoppingBag,
-    description: "Commande passée sur la plateforme",
-    color: "blue"
-  },
-  {
-    key: "shipped_to_miami",
-    label: "En transit",
-    icon: Plane,
-    description: "Expédié vers Miami, USA",
-    color: "purple"
-  },
-  {
-    key: "arrived_miami",
-    label: "Miami",
-    icon: Building2,
-    description: "Arrivé à l'entrepôt de Miami",
-    color: "indigo"
-  },
-  {
-    key: "shipped_to_haiti",
-    label: "Vers Haïti",
-    icon: Truck,
-    description: "En route vers Haïti",
-    color: "cyan"
-  },
-  {
-    key: "arrived_haiti",
-    label: "Haïti",
-    icon: MapPin,
-    description: "Arrivé à Cap-Haïtien",
-    color: "green"
-  },
-  {
-    key: "delivered",
-    label: "Livré",
-    icon: CheckCircle,
-    description: "Colis livré avec succès",
-    color: "emerald"
-  }
+  { key: "awaiting_payment", label: "Paiement", icon: Clock, description: "En attente du paiement" },
+  { key: "processing", label: "Commande", icon: ShoppingBag, description: "Commande passée sur la plateforme" },
+  { key: "shipped_to_miami", label: "En transit", icon: Plane, description: "Expédié vers Miami, USA" },
+  { key: "arrived_miami", label: "Miami", icon: Building2, description: "Arrivé à l'entrepôt de Miami" },
+  { key: "shipped_to_haiti", label: "Vers Haïti", icon: Truck, description: "En route vers Haïti" },
+  { key: "arrived_haiti", label: "Haïti", icon: MapPin, description: "Arrivé à Cap-Haïtien" },
+  { key: "delivered", label: "Livré", icon: CheckCircle, description: "Colis livré avec succès" },
 ];
 
-// Status messages for detailed tracking
 const STATUS_DETAILS: { [key: string]: { title: string; message: string; nextStep: string } } = {
   awaiting_payment: {
     title: "En attente de paiement",
-    message: "Votre commande est enregistrée mais le paiement n'a pas encore été confirmé. Veuillez effectuer le paiement via MonCash ou contacter notre équipe sur WhatsApp.",
+    message: "Votre commande est enregistrée mais le paiement n'a pas encore été confirmé.",
     nextStep: "Une fois le paiement confirmé, nous passerons votre commande immédiatement."
   },
   processing: {
     title: "Commande en traitement",
-    message: "Votre commande a été passée sur la plateforme (AliExpress, Amazon, etc.) et est en cours de préparation par le vendeur.",
+    message: "Votre commande a été passée sur la plateforme et est en cours de préparation.",
     nextStep: "Le colis sera expédié vers notre entrepôt à Miami sous peu."
   },
   shipped_to_miami: {
     title: "En transit vers Miami",
-    message: "Votre colis a été expédié et est en route vers notre entrepôt à Miami, USA. Ce trajet peut prendre entre 7 à 20 jours selon la provenance.",
+    message: "Votre colis est en route vers notre entrepôt à Miami, USA (7-20 jours).",
     nextStep: "Vous recevrez une notification dès que le colis arrive à Miami."
   },
   arrived_miami: {
     title: "Arrivé à Miami",
-    message: "Excellent ! Votre colis est arrivé à notre entrepôt à Miami. Nous préparons l'expédition vers Haïti.",
+    message: "Votre colis est arrivé à notre entrepôt à Miami. Expédition vers Haïti en préparation.",
     nextStep: "Le prochain envoi vers Haïti est prévu sous 3-5 jours ouvrables."
   },
   shipped_to_haiti: {
     title: "En route vers Haïti",
-    message: "Votre colis est en cours d'acheminement vers Haïti. L'expédition Miami → Cap-Haïtien prend généralement 3-5 jours.",
+    message: "Votre colis est en cours d'acheminement vers Haïti (3-5 jours).",
     nextStep: "Nous vous contacterons dès que le colis arrive à notre boutique."
   },
   arrived_haiti: {
     title: "Disponible à Cap-Haïtien",
-    message: "🎉 Bonne nouvelle ! Votre colis est arrivé à notre boutique à Champin, Cap-Haïtien. Vous pouvez venir le récupérer.",
+    message: "🎉 Votre colis est arrivé à notre boutique à Champin, Cap-Haïtien !",
     nextStep: "Présentez-vous avec votre numéro de suivi ou pièce d'identité."
   },
   delivered: {
@@ -107,10 +63,26 @@ const STATUS_DETAILS: { [key: string]: { title: string; message: string; nextSte
   },
   cancelled: {
     title: "Commande annulée",
-    message: "Cette commande a été annulée. Si vous avez des questions, contactez notre support.",
+    message: "Cette commande a été annulée.",
     nextStep: "Vous pouvez passer une nouvelle commande à tout moment."
   }
 };
+
+interface TrackingEvent {
+  date: string;
+  status: string;
+  details: string;
+  location: string;
+}
+
+interface ExternalTracking {
+  found: boolean;
+  carrier: string;
+  status: string;
+  lastEvent: string;
+  lastCheckpoint: string;
+  events: TrackingEvent[];
+}
 
 function TrackingSearchHandler({ onSearch }: { onSearch: (tracking: string) => void }) {
   const searchParams = useSearchParams();
@@ -130,53 +102,60 @@ function TrackingSearchHandler({ onSearch }: { onSearch: (tracking: string) => v
 function TrackingContent() {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [order, setOrder] = useState<any>(null);
+  const [externalTracking, setExternalTracking] = useState<ExternalTracking | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [externalLoading, setExternalLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = async (searchTerm?: string) => {
     const numberToSearch = searchTerm || trackingNumber.trim();
-    if (!numberToSearch) {
-      setError("Veuillez entrer un numéro de suivi");
-      return;
-    }
+    if (!numberToSearch) return;
 
     setLoading(true);
-    setError("");
+    setExternalLoading(true);
     setOrder(null);
+    setExternalTracking(null);
     setSearched(true);
 
+    // 1. Search in Supabase (both tables)
     try {
-      // Search in wholesale_orders first by miami or haiti tracking number
-      const { data: orderData, error: orderError } = await supabase
+      const { data: orderData } = await supabase
         .from("wholesale_orders")
         .select("*")
-        .or(`miami_tracking_number.ilike.%${numberToSearch}%,haiti_tracking_number.ilike.%${numberToSearch}%,id.eq.${numberToSearch}`)
+        .or(`miami_tracking_number.ilike.%${numberToSearch}%,haiti_tracking_number.ilike.%${numberToSearch}%`)
         .limit(1)
         .single();
 
-      if (orderError || !orderData) {
-        // Try orders table
+      if (orderData) {
+        setOrder(orderData);
+      } else {
         const { data: altOrderData } = await supabase
           .from("orders")
           .select("*")
-          .or(`miami_tracking_number.ilike.%${numberToSearch}%,haiti_tracking_number.ilike.%${numberToSearch}%,id.eq.${numberToSearch}`)
+          .or(`miami_tracking_number.ilike.%${numberToSearch}%,haiti_tracking_number.ilike.%${numberToSearch}%`)
           .limit(1)
           .single();
 
-        if (altOrderData) {
-          setOrder(altOrderData);
-        } else {
-          setError("Aucune commande trouvée avec ce numéro de suivi. Vérifiez le numéro et réessayez.");
-        }
-      } else {
-        setOrder(orderData);
+        if (altOrderData) setOrder(altOrderData);
       }
-    } catch (err) {
-      setError("Une erreur est survenue. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
+    } catch {
+      // Supabase search failed silently
     }
+    setLoading(false);
+
+    // 2. Always call universal tracking API
+    try {
+      const response = await fetch("/api/tracking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackingNumber: numberToSearch }),
+      });
+      const data = await response.json();
+      setExternalTracking(data);
+    } catch {
+      setExternalTracking({ found: false, carrier: "", status: "", lastEvent: "", lastCheckpoint: "", events: [] });
+    }
+    setExternalLoading(false);
   };
 
   const handleSearchFromUrl = (tracking: string) => {
@@ -193,10 +172,24 @@ function TrackingContent() {
     return STATUS_DETAILS[status] || STATUS_DETAILS.awaiting_payment;
   };
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toLocaleDateString("fr-FR", {
+        day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+      });
+    } catch { return dateStr; }
+  };
+
+  const carrierNames: { [key: string]: string } = {
+    usps: "USPS", ups: "UPS", fedex: "FedEx", dhl: "DHL", "amazon-fba-us": "Amazon",
+    yanwen: "Yanwen", cainiao: "Cainiao (AliExpress)", "4px": "4PX", yun: "YunExpress", unknown: "Transporteur"
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <Navbar />
-      
+
       <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
@@ -207,7 +200,7 @@ function TrackingContent() {
             Suivi de Colis
           </h1>
           <p className="text-gray-600 text-lg max-w-lg mx-auto">
-            Entrez votre numéro de suivi pour voir l'état actuel de votre commande en temps réel
+            Suivez n'importe quel colis — commandes Up-to-date ou tout autre numéro de suivi
           </p>
         </div>
 
@@ -223,16 +216,16 @@ function TrackingContent() {
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Numéro de suivi (ex: ABC123, miami-xxx...)"
+                placeholder="Entrez votre numéro de suivi (USPS, FedEx, UPS, DHL, AliExpress...)"
                 className="w-full pl-12 pr-6 py-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg font-medium transition-all duration-300"
               />
             </div>
             <button
               onClick={() => handleSearch()}
-              disabled={loading}
-              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={loading || externalLoading}
+              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? (
+              {(loading || externalLoading) ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Recherche...
@@ -245,35 +238,16 @@ function TrackingContent() {
               )}
             </button>
           </div>
-
-          {/* Example Numbers */}
           <div className="mt-4 text-center text-sm text-gray-500">
-            <Info className="inline mr-1" size={14} />
-            Entrez le numéro de tracking Miami, Haïti, ou l'ID de commande
+            <Globe className="inline mr-1" size={14} />
+            Suivi universel — fonctionne avec tous les transporteurs (USPS, UPS, FedEx, DHL, AliExpress, Amazon...)
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8 flex items-start gap-4">
-            <AlertCircle className="text-red-500 flex-shrink-0 mt-1" size={24} />
-            <div>
-              <h3 className="font-bold text-red-800 mb-1">Commande introuvable</h3>
-              <p className="text-red-600">{error}</p>
-              <p className="mt-2 text-sm text-red-500">
-                Besoin d'aide ? Contactez-nous sur{" "}
-                <a href="https://wa.me/50932836938" className="underline font-semibold">WhatsApp</a>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Tracking Results */}
+        {/* ===== SUPABASE ORDER SECTION (if found) ===== */}
         {order && (
-          <div className="space-y-6">
-            {/* Order Header Card */}
+          <div className="space-y-6 mb-8">
             <div className="bg-white rounded-3xl shadow-xl border border-blue-100 overflow-hidden">
-              {/* Status Banner */}
               <div className={`px-6 py-4 ${
                 order.order_status === "delivered" ? "bg-gradient-to-r from-green-500 to-emerald-600" :
                 order.order_status === "arrived_haiti" ? "bg-gradient-to-r from-green-500 to-teal-600" :
@@ -284,32 +258,24 @@ function TrackingContent() {
                   <div className="flex items-center gap-3">
                     {order.order_status === "delivered" ? <CheckCircle size={28} /> : <Package size={28} />}
                     <div>
-                      <p className="text-sm opacity-90">Statut actuel</p>
+                      <p className="text-sm opacity-90">Commande Up-to-date</p>
                       <p className="text-xl font-bold">{getStatusDetails(order.order_status).title}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm opacity-90">Date de commande</p>
                     <p className="font-semibold">
-                      {new Date(order.created_at).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric"
-                      })}
+                      {new Date(order.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Product Info */}
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-6">
                   {order.product_image && (
-                    <img
-                      src={order.product_image}
-                      alt={order.product_name}
-                      className="w-24 h-24 object-contain rounded-xl bg-gray-100 border border-gray-200"
-                    />
+                    <img src={order.product_image} alt={order.product_name}
+                      className="w-24 h-24 object-contain rounded-xl bg-gray-100 border border-gray-200" />
                   )}
                   <div className="flex-1">
                     <h2 className="font-bold text-xl text-gray-900 mb-2 line-clamp-2">{order.product_name}</h2>
@@ -334,7 +300,6 @@ function TrackingContent() {
                   </div>
                 </div>
 
-                {/* Status Message */}
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-5 border border-blue-100">
                   <div className="flex items-start gap-3">
                     <Info className="text-blue-600 flex-shrink-0 mt-1" size={20} />
@@ -350,65 +315,37 @@ function TrackingContent() {
               </div>
             </div>
 
-            {/* Progress Timeline */}
+            {/* Progress Timeline - Supabase */}
             {order.order_status !== "cancelled" && (
               <div className="bg-white rounded-3xl shadow-xl border border-blue-100 p-6">
                 <h3 className="font-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
                   <CalendarDays size={24} className="text-purple-600" />
-                  Progression de votre commande
+                  Progression Up-to-date
                 </h3>
-
                 <div className="relative">
-                  {/* Progress Line */}
                   <div className="absolute left-8 top-0 bottom-0 w-1 bg-gray-200 rounded-full"></div>
-                  <div 
-                    className="absolute left-8 top-0 w-1 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full transition-all duration-500"
-                    style={{
-                      height: `${Math.min(100, (getCurrentStageIndex(order.order_status) + 1) / TRACKING_STAGES.length * 100)}%`
-                    }}
+                  <div className="absolute left-8 top-0 w-1 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full transition-all duration-500"
+                    style={{ height: `${Math.min(100, (getCurrentStageIndex(order.order_status) + 1) / TRACKING_STAGES.length * 100)}%` }}
                   ></div>
-
-                  {/* Stages */}
                   <div className="space-y-6">
                     {TRACKING_STAGES.map((stage, index) => {
                       const currentIndex = getCurrentStageIndex(order.order_status);
                       const isCompleted = index <= currentIndex;
                       const isCurrent = index === currentIndex;
                       const StageIcon = stage.icon;
-
                       return (
                         <div key={stage.key} className="relative flex items-start gap-4 pl-4">
-                          {/* Icon Circle */}
                           <div className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                            isCurrent 
-                              ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-100" 
-                              : isCompleted 
-                                ? "bg-green-500 text-white" 
-                                : "bg-gray-200 text-gray-400"
+                            isCurrent ? "bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-100"
+                              : isCompleted ? "bg-green-500 text-white" : "bg-gray-200 text-gray-400"
                           }`}>
-                            {isCompleted && !isCurrent ? (
-                              <CheckCircle size={20} />
-                            ) : (
-                              <StageIcon size={18} />
-                            )}
+                            {isCompleted && !isCurrent ? <CheckCircle size={20} /> : <StageIcon size={18} />}
                           </div>
-
-                          {/* Content */}
                           <div className={`flex-1 pb-2 ${isCurrent ? "opacity-100" : isCompleted ? "opacity-70" : "opacity-50"}`}>
                             <div className="flex items-center gap-2">
-                              <h4 className={`font-semibold ${isCurrent ? "text-blue-900" : "text-gray-700"}`}>
-                                {stage.label}
-                              </h4>
-                              {isCurrent && (
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                                  En cours
-                                </span>
-                              )}
-                              {isCompleted && !isCurrent && (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                                  Complété
-                                </span>
-                              )}
+                              <h4 className={`font-semibold ${isCurrent ? "text-blue-900" : "text-gray-700"}`}>{stage.label}</h4>
+                              {isCurrent && <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">En cours</span>}
+                              {isCompleted && !isCurrent && <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Complété</span>}
                             </div>
                             <p className="text-sm text-gray-500">{stage.description}</p>
                           </div>
@@ -419,76 +356,181 @@ function TrackingContent() {
                 </div>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Contact Section */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
-              <h3 className="font-bold text-green-800 mb-2 flex items-center gap-2">
-                <Phone size={20} />
-                Besoin d'aide ?
-              </h3>
-              <p className="text-green-700 text-sm mb-4">
-                Pour toute question concernant votre commande, contactez-nous sur WhatsApp.
-              </p>
-              <a
-                href="https://wa.me/50932836938"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
-              >
-                <ExternalLink size={18} />
-                Contacter le support
-              </a>
+        {/* ===== UNIVERSAL TRACKING SECTION (always shown after search) ===== */}
+        {searched && (
+          <div className="space-y-6 mb-8">
+            <div className="bg-white rounded-3xl shadow-xl border border-emerald-100 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
+                <div className="flex items-center gap-3">
+                  <Globe size={28} />
+                  <div>
+                    <p className="text-sm opacity-90">Suivi universel du transporteur</p>
+                    <p className="text-xl font-bold font-mono">{trackingNumber}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {externalLoading && (
+                  <div className="flex flex-col items-center py-10">
+                    <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+                    <p className="text-gray-600 font-medium">Recherche en cours auprès des transporteurs...</p>
+                    <p className="text-gray-400 text-sm mt-1">USPS, FedEx, UPS, DHL, AliExpress...</p>
+                  </div>
+                )}
+
+                {!externalLoading && externalTracking?.found && externalTracking.events.length > 0 && (
+                  <>
+                    {/* Carrier & Status */}
+                    <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                          <Truck className="text-emerald-600" size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Transporteur</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {carrierNames[externalTracking.carrier] || externalTracking.carrier?.toUpperCase() || "Détecté automatiquement"}
+                          </p>
+                        </div>
+                      </div>
+                      {externalTracking.lastCheckpoint && (
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Dernière mise à jour</p>
+                          <p className="font-semibold text-gray-800">{formatDate(externalTracking.lastCheckpoint)}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {externalTracking.lastEvent && (
+                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100 mb-6">
+                        <div className="flex items-start gap-3">
+                          <Info className="text-emerald-600 flex-shrink-0 mt-1" size={20} />
+                          <p className="text-gray-800 font-medium">{externalTracking.lastEvent}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Events Timeline */}
+                    <h3 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
+                      <CalendarDays size={20} className="text-emerald-600" />
+                      Historique de suivi
+                    </h3>
+                    <div className="relative">
+                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-emerald-200"></div>
+                      <div className="space-y-4">
+                        {externalTracking.events.map((event, index) => (
+                          <div key={index} className="relative flex items-start gap-4 pl-0">
+                            <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              index === 0 ? "bg-emerald-500 text-white shadow-md" : "bg-emerald-100 text-emerald-600"
+                            }`}>
+                              {index === 0 ? <Truck size={16} /> : <Clock size={14} />}
+                            </div>
+                            <div className="flex-1 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                              <div className="flex items-start justify-between flex-wrap gap-2">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{event.details || event.status}</p>
+                                  {event.location && (
+                                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                                      <MapPin size={12} /> {event.location}
+                                    </p>
+                                  )}
+                                </div>
+                                {event.date && (
+                                  <p className="text-sm text-gray-400 whitespace-nowrap">{formatDate(event.date)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!externalLoading && (!externalTracking?.found || externalTracking.events.length === 0) && (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <AlertTriangle className="text-amber-500" size={32} />
+                    </div>
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">
+                      {order ? "Pas encore d'infos du transporteur" : "Aucune info de suivi trouvée"}
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto mb-4">
+                      {order
+                        ? "Le transporteur n'a pas encore enregistré ce colis. Les informations apparaîtront ici dès que le colis sera scanné."
+                        : "Ce numéro de suivi n'a pas été trouvé. Vérifiez le numéro ou réessayez plus tard — il peut prendre 24-48h pour apparaître après l'expédition."
+                      }
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-500">
+                      <div className="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full">
+                        <Clock size={14} />
+                        <span>Réessayez dans quelques heures</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Empty State (before search) */}
+        {/* Contact Section */}
+        {searched && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100 mb-8">
+            <h3 className="font-bold text-green-800 mb-2 flex items-center gap-2">
+              <Phone size={20} />
+              Besoin d'aide ?
+            </h3>
+            <p className="text-green-700 text-sm mb-4">
+              Pour toute question concernant votre colis, contactez-nous sur WhatsApp avec votre numéro de suivi.
+            </p>
+            <a
+              href="https://wa.me/50932836938"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
+            >
+              <ExternalLink size={18} />
+              Contacter le support
+            </a>
+          </div>
+        )}
+
+        {/* Empty State */}
         {!searched && !loading && (
           <div className="bg-white rounded-3xl shadow-xl border border-blue-100 p-12 text-center">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Package className="text-purple-500" size={48} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Suivez vos colis</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Suivez n'importe quel colis</h2>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Entrez votre numéro de suivi ci-dessus pour voir l'état de votre commande et sa progression vers Haïti.
+              Entrez votre numéro de suivi ci-dessus — que ce soit une commande Up-to-date ou un colis de n'importe quel transporteur.
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-2">
-                <Truck className="text-blue-500" size={18} />
-                <span>Suivi en temps réel</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="text-green-500" size={18} />
-                <span>Miami → Cap-Haïtien</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="text-purple-500" size={18} />
-                <span>Notifications de statut</span>
-              </div>
+              <div className="flex items-center gap-2"><Truck className="text-blue-500" size={18} /><span>USPS, UPS, FedEx</span></div>
+              <div className="flex items-center gap-2"><Globe className="text-green-500" size={18} /><span>DHL, AliExpress, Amazon</span></div>
+              <div className="flex items-center gap-2"><CheckCircle className="text-purple-500" size={18} /><span>Tous les transporteurs</span></div>
             </div>
           </div>
         )}
 
         {/* Quick Links */}
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <Link
-            href="/my-orders"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all"
-          >
-            <Package size={18} />
-            Voir mes commandes
+          <Link href="/my-orders"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all">
+            <Package size={18} /> Voir mes commandes
           </Link>
-          <Link
-            href="/aliexpress"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all"
-          >
-            <ShoppingBag size={18} />
-            Nouvelle commande
+          <Link href="/aliexpress"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all">
+            <ShoppingBag size={18} /> Nouvelle commande
           </Link>
         </div>
       </div>
 
-      {/* Suspense for search params */}
       <Suspense fallback={null}>
         <TrackingSearchHandler onSearch={handleSearchFromUrl} />
       </Suspense>
