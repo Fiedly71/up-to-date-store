@@ -7,20 +7,25 @@ import { getPriceBreakdown, USD_TO_GDS_RATE, formatGourdes } from "@/app/utils/p
 import Link from "next/link";
 import { Link2, ShoppingCart, CheckCircle, Package, Plus, Minus, AlertCircle, ShoppingBag, Globe, ArrowRight, MessageCircle } from "lucide-react";
 
-const SUPPORTED_SITES = [
-  { name: "Shein", color: "bg-black text-white", icon: "👗", domain: "shein.com" },
-  { name: "Temu", color: "bg-orange-500 text-white", icon: "🛍️", domain: "temu.com" },
-  { name: "Amazon", color: "bg-yellow-400 text-black", icon: "📦", domain: "amazon.com" },
-  { name: "Autre site", color: "bg-gray-600 text-white", icon: "🌐", domain: "" },
+const PLATFORMS = [
+  { value: "aliexpress", label: "AliExpress", color: "bg-red-500 text-white", icon: "🛒" },
+  { value: "shein", label: "Shein", color: "bg-black text-white", icon: "👗" },
+  { value: "temu", label: "Temu", color: "bg-orange-500 text-white", icon: "🛍️" },
+  { value: "amazon", label: "Amazon", color: "bg-yellow-400 text-black", icon: "📦" },
+  { value: "alibaba", label: "Alibaba", color: "bg-orange-600 text-white", icon: "🏭" },
+  { value: "ebay", label: "eBay", color: "bg-blue-500 text-white", icon: "🏷️" },
+  { value: "other", label: "Autre", color: "bg-gray-600 text-white", icon: "🌐" },
 ];
 
-function detectSite(url: string): string {
+function detectPlatform(url: string): string {
   const lower = url.toLowerCase();
-  if (lower.includes("shein.com") || lower.includes("shein.")) return "Shein";
-  if (lower.includes("temu.com") || lower.includes("temu.")) return "Temu";
-  if (lower.includes("amazon.com") || lower.includes("amazon.")) return "Amazon";
-  if (lower.includes("aliexpress")) return "AliExpress";
-  return "Autre";
+  if (lower.includes("aliexpress")) return "aliexpress";
+  if (lower.includes("shein.com") || lower.includes("shein.")) return "shein";
+  if (lower.includes("temu.com") || lower.includes("temu.")) return "temu";
+  if (lower.includes("amazon.com") || lower.includes("amazon.")) return "amazon";
+  if (lower.includes("alibaba.com") || lower.includes("alibaba.")) return "alibaba";
+  if (lower.includes("ebay.com") || lower.includes("ebay.")) return "ebay";
+  return "";
 }
 
 export default function CommanderPage() {
@@ -32,10 +37,9 @@ export default function CommanderPage() {
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("");
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
-
-  const detectedSite = productUrl ? detectSite(productUrl) : "";
   const priceNum = parseFloat(productPrice) || 0;
   const totalBase = priceNum * quantity;
   const breakdown = getPriceBreakdown(totalBase);
@@ -60,7 +64,12 @@ export default function CommanderPage() {
       return;
     }
 
-    const source = detectSite(productUrl).toLowerCase();
+    if (!selectedPlatform) {
+      setError("Choisissez la plateforme sur laquelle vous avez trouvé le produit.");
+      return;
+    }
+
+    const source = selectedPlatform;
     const uniqueId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     addToCart({
@@ -86,6 +95,7 @@ export default function CommanderPage() {
       setColor("");
       setSize("");
       setNotes("");
+      setSelectedPlatform("");
     }, 300);
   };
 
@@ -108,15 +118,15 @@ export default function CommanderPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white">Commander un Produit</h1>
           </div>
           <p className="text-white/90 text-lg max-w-xl mx-auto">
-            Vous avez trouvé un produit sur <strong>Shein</strong>, <strong>Temu</strong>, <strong>Amazon</strong> ou un autre site ?
+            Vous avez trouvé un produit sur <strong>AliExpress</strong>, <strong>Shein</strong>, <strong>Temu</strong>, <strong>Amazon</strong> ou un autre site ?
             <span className="block mt-1">Collez le lien ici et nous nous occupons de tout !</span>
           </p>
 
           {/* Supported sites badges */}
           <div className="flex flex-wrap justify-center gap-2 mt-6">
-            {SUPPORTED_SITES.map(site => (
-              <span key={site.name} className={`${site.color} px-4 py-1.5 rounded-full text-sm font-bold shadow`}>
-                {site.icon} {site.name}
+            {PLATFORMS.map(p => (
+              <span key={p.value} className={`${p.color} px-4 py-1.5 rounded-full text-sm font-bold shadow`}>
+                {p.icon} {p.label}
               </span>
             ))}
           </div>
@@ -129,8 +139,8 @@ export default function CommanderPage() {
           <h2 className="text-xl font-bold text-center text-gray-900 mb-6">Comment ça marche ?</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             {[
-              { step: "1", title: "Trouvez", desc: "Trouvez le produit sur Shein, Temu, Amazon...", emoji: "🔍" },
-              { step: "2", title: "Collez", desc: "Copiez le lien et collez-le ici", emoji: "📋" },
+              { step: "1", title: "Choisissez", desc: "Sélectionnez la plateforme (Shein, Temu, Amazon...)", emoji: "🎯" },
+              { step: "2", title: "Collez", desc: "Copiez le lien du produit et collez-le ici", emoji: "📋" },
               { step: "3", title: "Décrivez", desc: "Ajoutez le nom, couleur, taille, prix", emoji: "✏️" },
               { step: "4", title: "Commandez", desc: "Ajoutez au panier et payez", emoji: "✅" },
             ].map((item) => (
@@ -185,36 +195,56 @@ export default function CommanderPage() {
                   </div>
                 )}
 
-                {/* Step 1: Product link */}
+                {/* Step 1: Platform selector */}
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">1</span>
+                    Sur quel site avez-vous trouvé le produit ? <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 ml-8">
+                    {PLATFORMS.map(p => (
+                      <button key={p.value} type="button" onClick={() => { setSelectedPlatform(p.value); setError(""); }}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+                          selectedPlatform === p.value
+                            ? `${p.color} ring-2 ring-offset-1 ring-purple-400 shadow-md border-transparent`
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white'
+                        }`}>
+                        <span>{p.icon}</span> {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Step 2: Product link */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">2</span>
                     Lien du produit <span className="text-red-500">*</span>
                   </label>
                   <p className="text-xs text-gray-500 mb-2 ml-8">
-                    Allez sur Shein, Temu, Amazon (ou autre) → trouvez le produit → copiez le lien → collez-le ici
+                    Copiez le lien complet du produit depuis le site et collez-le ici
                   </p>
                   <div className="relative">
                     <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <input
                       type="url"
                       value={productUrl}
-                      onChange={(e) => { setProductUrl(e.target.value); setError(""); }}
+                      onChange={(e) => {
+                        setProductUrl(e.target.value);
+                        setError("");
+                        const detected = detectPlatform(e.target.value);
+                        if (detected) setSelectedPlatform(detected);
+                      }}
                       placeholder="https://www.shein.com/... ou https://www.temu.com/..."
                       className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700"
                     />
                   </div>
-                  {detectedSite && (
-                    <p className="text-xs mt-1.5 ml-8 text-purple-600 font-medium">
-                      Site détecté : <strong>{detectedSite}</strong> ✓
-                    </p>
-                  )}
                 </div>
 
-                {/* Step 2: Description */}
+                {/* Step 3: Description */}
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">2</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">3</span>
                     Nom / Description du produit <span className="text-red-500">*</span>
                   </label>
                   <p className="text-xs text-gray-500 mb-2 ml-8">
@@ -229,10 +259,10 @@ export default function CommanderPage() {
                   />
                 </div>
 
-                {/* Step 3: Details */}
+                {/* Step 4: Details */}
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">3</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">4</span>
                     Détails du produit
                   </label>
 

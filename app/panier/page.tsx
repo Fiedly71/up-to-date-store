@@ -71,8 +71,8 @@ export default function PanierPage() {
             basePrice: item.baseTotal,
             serviceFee: (!isShopItem(item) && importSubtotal > 0) ? Math.round((item.baseTotal / importSubtotal) * grandFee * 100) / 100 : 0,
             totalWithFees: item.baseTotal + ((!isShopItem(item) && importSubtotal > 0) ? Math.round((item.baseTotal / importSubtotal) * grandFee * 100) / 100 : 0),
+            platform: item.source || (isShopItem(item) ? "shop" : "other"),
             notes: [
-              item.source ? `Source: ${item.source}` : "",
               item.color ? `Couleur: ${item.color}` : "",
               item.size ? `Taille: ${item.size}` : "",
               item.notes || "",
@@ -279,7 +279,19 @@ ${itemsList}
                       <div className="flex flex-wrap gap-1 mt-1">
                         {item.color && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.color}</span>}
                         {item.size && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.size}</span>}
-                        {item.source && <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded capitalize">{item.source}</span>}
+                        {item.source && (() => {
+                          const platformLabels: Record<string, { label: string; bg: string; text: string }> = {
+                            aliexpress: { label: "AliExpress", bg: "bg-red-50", text: "text-red-700" },
+                            shein: { label: "Shein", bg: "bg-gray-100", text: "text-black" },
+                            temu: { label: "Temu", bg: "bg-orange-50", text: "text-orange-700" },
+                            amazon: { label: "Amazon", bg: "bg-amber-50", text: "text-amber-800" },
+                            alibaba: { label: "Alibaba", bg: "bg-orange-50", text: "text-orange-800" },
+                            ebay: { label: "eBay", bg: "bg-blue-50", text: "text-blue-700" },
+                            shop: { label: "Boutique", bg: "bg-emerald-50", text: "text-emerald-700" },
+                          };
+                          const p = platformLabels[item.source!] || { label: item.source, bg: "bg-gray-100", text: "text-gray-600" };
+                          return <span className={`text-xs ${p.bg} ${p.text} px-2 py-0.5 rounded font-semibold`}>{p.label}</span>;
+                        })()}
                       </div>
                       {item.notes && <p className="text-xs text-gray-400 mt-1 truncate">{item.notes}</p>}
 
