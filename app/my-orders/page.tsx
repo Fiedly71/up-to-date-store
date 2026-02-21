@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
-import { Package, Clock, Truck, CheckCircle, MapPin, ShoppingBag, RefreshCw, ExternalLink, Eye } from "lucide-react";
+import { Package, Clock, Truck, CheckCircle, MapPin, ShoppingBag, RefreshCw, ExternalLink, Eye, User } from "lucide-react";
 import Link from "next/link";
 
 const supabase = createClient(
@@ -164,14 +164,23 @@ export default function MyOrdersPage() {
             </div>
           </div>
           {userEmail && (
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all text-gray-700 font-semibold disabled:opacity-50"
-            >
-              <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
-              Actualiser
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/mes-infos"
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all text-purple-700 font-semibold border border-purple-100"
+              >
+                <User size={18} />
+                Mes infos
+              </Link>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-md hover:shadow-lg transition-all text-gray-700 font-semibold disabled:opacity-50"
+              >
+                <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+                Actualiser
+              </button>
+            </div>
           )}
         </div>
 

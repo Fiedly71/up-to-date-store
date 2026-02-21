@@ -5,7 +5,8 @@ import Navbar from "../components/Navbar";
 import {
   Package, Users, Settings, Shield, ShieldOff, RefreshCw, Search, ChevronDown,
   DollarSign, Calendar, TrendingUp, Eye, MapPin, Phone, Mail, User, BarChart3,
-  UserPlus, Trash2, X, Lock, Plus, Globe, ShoppingCart, Link as LinkIcon, Image as ImageIcon
+  UserPlus, Trash2, X, Lock, Plus, Globe, ShoppingCart, Link as LinkIcon, Image as ImageIcon,
+  Tag, Edit3, Check
 } from "lucide-react";
 
 const supabase = createClient(
@@ -58,7 +59,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "users" | "revenue">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "users" | "revenue" | "products">("orders");
   const [searchOrders, setSearchOrders] = useState("");
   const [searchUsers, setSearchUsers] = useState("");
   const [savingOrder, setSavingOrder] = useState<string | null>(null);
@@ -98,6 +99,18 @@ export default function AdminPanel() {
   });
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split("T")[0]);
 
+  // Products management
+  const [products, setProducts] = useState<any[]>([]);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [productForm, setProductForm] = useState({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [productError, setProductError] = useState("");
+  const [productSuccess, setProductSuccess] = useState("");
+  const [searchProducts, setSearchProducts] = useState("");
+  const [confirmDeleteProductId, setConfirmDeleteProductId] = useState<string | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
@@ -110,7 +123,7 @@ export default function AdminPanel() {
           body: JSON.stringify({ userId: user.id }),
         });
         const result = await res.json();
-        if (result.isAdmin) { setIsAdmin(true); await refreshData(user.id); }
+        if (result.isAdmin) { setIsAdmin(true); await refreshData(user.id); await loadProducts(); }
       } catch {}
       setLoading(false);
     };
@@ -120,6 +133,7 @@ export default function AdminPanel() {
   const refreshData = async (userId?: string) => {
     const uid = userId || currentUserId;
     if (!uid) return;
+    await loadProducts();
     try {
       const res = await fetch("/api/admin/data", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -262,6 +276,89 @@ export default function AdminPanel() {
     setDeletingUserId(null);
   };
 
+  const loadProducts = async () => {
+    try {
+      const res = await fetch("/api/products");
+      const data = await res.json();
+      setProducts(data.products || []);
+    } catch { setProducts([]); }
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProduct(true);
+    setProductError("");
+    setProductSuccess("");
+    try {
+      const action = editingProduct ? "update" : "create";
+      const product = {
+        ...(editingProduct ? { id: editingProduct.id } : {}),
+        name: productForm.name,
+        description: productForm.description,
+        price: productForm.price ? parseFloat(productForm.price) : null,
+        image_url: productForm.image_url,
+        category: productForm.category,
+        in_stock: productForm.in_stock,
+      };
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, action, product }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setProductSuccess(editingProduct ? "Produit mis à jour !" : "Produit créé !");
+      await loadProducts();
+      setTimeout(() => { setShowProductForm(false); setProductSuccess(""); setEditingProduct(null); }, 1000);
+      setProductForm({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
+    } catch (err: any) { setProductError(err.message); }
+    setSavingProduct(false);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    setDeletingProductId(productId);
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, action: "delete", product: { id: productId } }),
+      });
+      if (!res.ok) throw new Error();
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      setConfirmDeleteProductId(null);
+    } catch {}
+    setDeletingProductId(null);
+  };
+
+  const openEditProduct = (p: any) => {
+    setEditingProduct(p);
+    setProductForm({
+      name: p.name || "",
+      description: p.description || "",
+      price: p.price ? String(p.price) : "",
+      image_url: p.image_url || "",
+      category: p.category || "",
+      in_stock: p.in_stock !== false,
+    });
+    setShowProductForm(true);
+    setProductError("");
+    setProductSuccess("");
+  };
+
+  const openNewProduct = () => {
+    setEditingProduct(null);
+    setProductForm({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
+    setShowProductForm(true);
+    setProductError("");
+    setProductSuccess("");
+  };
+
+  const filteredProducts = products.filter(p =>
+    (p.name || "").toLowerCase().includes(searchProducts.toLowerCase()) ||
+    (p.category || "").toLowerCase().includes(searchProducts.toLowerCase()) ||
+    (p.description || "").toLowerCase().includes(searchProducts.toLowerCase())
+  );
+
   const getStatusInfo = (status: string) => ORDER_STATUSES.find(s => s.value === status) || ORDER_STATUSES[0];
   const getOrderFee = (o: any) => { const f = parseFloat(o.service_fee || 0); return isNaN(f) ? 0 : f; };
   const getOrderPrice = (o: any) => { const p = parseFloat(o.total_price_with_fees || o.price || 0); return isNaN(p) ? 0 : p; };
@@ -364,6 +461,7 @@ export default function AdminPanel() {
               {([
                 { key: "orders" as const, label: "Commandes", icon: Package, count: allOrders.length },
                 { key: "users" as const, label: "Clients", icon: Users, count: users.length },
+                { key: "products" as const, label: "Produits", icon: Tag, count: products.length },
                 { key: "revenue" as const, label: "Revenus", icon: BarChart3, count: undefined as number | undefined },
               ]).map(tab => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -760,6 +858,143 @@ export default function AdminPanel() {
                     </div>
                   )}
                 </div>
+              </section>
+            )}
+
+            {/* ============ PRODUCTS TAB ============ */}
+            {activeTab === "products" && (
+              <section className="space-y-4">
+                {/* Product Form Modal */}
+                {showProductForm && (
+                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowProductForm(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-5">
+                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Tag size={20} className="text-purple-600" /> {editingProduct ? "Modifier le produit" : "Nouveau produit"}</h3>
+                        <button onClick={() => setShowProductForm(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+                      </div>
+                      {productError && <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-2 text-sm mb-3">{productError}</div>}
+                      {productSuccess && <div className="bg-green-50 text-green-700 border border-green-200 rounded-lg px-3 py-2 text-sm mb-3">{productSuccess}</div>}
+                      <form onSubmit={handleSaveProduct} className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Nom du produit *</label>
+                          <input required value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="Ex: Smart Watch Pro" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                          <textarea rows={3} value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="Description détaillée du produit..." />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Prix (USD)</label>
+                            <input type="number" step="0.01" min="0" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="0.00" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Catégorie</label>
+                            <select value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+                              <option value="">-- Choisir --</option>
+                              <option value="electronique">Électronique</option>
+                              <option value="accessoires">Accessoires</option>
+                              <option value="maison">Maison</option>
+                              <option value="mode">Mode</option>
+                              <option value="beaute">Beauté</option>
+                              <option value="sport">Sport</option>
+                              <option value="jouets">Jouets</option>
+                              <option value="autre">Autre</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">URL de l&apos;image</label>
+                          <input value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="https://..." />
+                        </div>
+                        {productForm.image_url && (
+                          <div className="border border-gray-200 rounded-lg p-2 bg-gray-50">
+                            <img src={productForm.image_url} alt="Aperçu" className="max-h-40 mx-auto rounded object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={productForm.in_stock} onChange={e => setProductForm(f => ({ ...f, in_stock: e.target.checked }))} className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                            <span className="text-sm text-gray-700 font-medium">En stock</span>
+                          </label>
+                        </div>
+                        <button type="submit" disabled={savingProduct} className="w-full py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm hover:bg-purple-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                          {savingProduct ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Enregistrement...</> : <><Check size={16} /> {editingProduct ? "Mettre à jour" : "Créer le produit"}</>}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* Products toolbar */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input value={searchProducts} onChange={e => setSearchProducts(e.target.value)} placeholder="Rechercher un produit..." className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 shadow-sm" />
+                  </div>
+                  <button onClick={openNewProduct} className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm hover:bg-purple-700 shadow-sm transition">
+                    <Plus size={16} /> Ajouter un produit
+                  </button>
+                </div>
+
+                {/* Products grid */}
+                {filteredProducts.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-12 text-center">
+                    <Tag className="mx-auto mb-3 text-gray-300" size={40} />
+                    <p className="text-gray-500 text-sm font-medium">Aucun produit</p>
+                    <p className="text-gray-400 text-xs mt-1">Cliquez sur &quot;Ajouter un produit&quot; pour commencer</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredProducts.map(p => (
+                      <div key={p.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition">
+                        {p.image_url ? (
+                          <div className="h-40 bg-gray-100 relative">
+                            <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" onError={e => { (e.currentTarget.parentElement as HTMLDivElement).innerHTML = '<div class="flex items-center justify-center h-full text-gray-300"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg></div>'; }} />
+                          </div>
+                        ) : (
+                          <div className="h-40 bg-gray-50 flex items-center justify-center"><ImageIcon className="text-gray-300" size={40} /></div>
+                        )}
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="font-bold text-gray-900 text-sm leading-tight">{p.name}</h3>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {p.in_stock !== false ? (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">En stock</span>
+                              ) : (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">Rupture</span>
+                              )}
+                            </div>
+                          </div>
+                          {p.description && <p className="text-xs text-gray-500 mb-2 line-clamp-2">{p.description}</p>}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {p.price != null && <span className="text-lg font-bold text-purple-700">${Number(p.price).toFixed(2)}</span>}
+                              {p.category && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">{p.category}</span>}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => openEditProduct(p)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-blue-600 transition" title="Modifier">
+                                <Edit3 size={14} />
+                              </button>
+                              {confirmDeleteProductId === p.id ? (
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleDeleteProduct(p.id)} disabled={deletingProductId === p.id} className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 text-xs font-bold transition">
+                                    {deletingProductId === p.id ? "..." : "Oui"}
+                                  </button>
+                                  <button onClick={() => setConfirmDeleteProductId(null)} className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-xs font-bold transition">Non</button>
+                                </div>
+                              ) : (
+                                <button onClick={() => setConfirmDeleteProductId(p.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition" title="Supprimer">
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 

@@ -4,15 +4,19 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ShoppingCart, MessageCircle, Search, Sparkles } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
-import { useCart } from '../context/CartContext'; // Import correct
-
-import { products as allProducts } from "../data/products";
+import { useCart } from '../context/CartContext';
 
 export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
   const [aliExpressResults, setAliExpressResults] = useState<any[]>([]);
   const [loadingAliExpress, setLoadingAliExpress] = useState(false);
   const [errorAliExpress, setErrorAliExpress] = useState("");
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+
+  // Fetch products from DB
+  useEffect(() => {
+    fetch("/api/products").then(r => r.json()).then(d => setAllProducts(d.products || [])).catch(() => {});
+  }, []);
 
   // Recherche initiale depuis l'URL (query param)
   useEffect(() => {
@@ -145,11 +149,10 @@ export default function Produits() {
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    <Image
-                      src={product.image || "/UPTODATE%20logo.jpg"}
+                    <img
+                      src={product.image_url || product.image || "/UPTODATE%20logo.jpg"}
                       alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     {/* Badge Premium */}
@@ -158,9 +161,15 @@ export default function Produits() {
                     </div>
                   </div>
                   <div className="p-4 flex flex-col flex-grow bg-white">
-                    <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
+                    <h3 className="text-md font-bold text-gray-900 mb-1 group-hover:text-purple-600 transition-colors">
                       {product.name}
                     </h3>
+                    {product.price != null && (
+                      <p className="text-lg font-bold text-purple-700 mb-2">${Number(product.price).toFixed(2)}</p>
+                    )}
+                    {product.description && (
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">{product.description}</p>
+                    )}
                     <div className="mb-4">
                       <label className="block text-xs font-semibold text-gray-600 mb-2">Quantité</label>
                       <div className="flex items-center gap-2">

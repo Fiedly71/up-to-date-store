@@ -7,7 +7,6 @@ import { Search, Truck, ShoppingCart, Package, LogIn, UserPlus, LogOut, Shield, 
 import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap, ArrowRight } from "lucide-react";
 import { calculateFinalPrice, USD_TO_GDS_RATE, formatGourdes, getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
-import { products as allProducts } from "@/app/data/products";
 import { useCart } from '@/app/context/CartContext';
 import { createClient } from "@supabase/supabase-js";
 
@@ -24,8 +23,14 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
+
+  // Fetch products from DB
+  useEffect(() => {
+    fetch("/api/products").then(r => r.json()).then(d => setAllProducts(d.products || [])).catch(() => {});
+  }, []);
 
   // Check authentication status
   useEffect(() => {
@@ -342,6 +347,7 @@ export default function Home() {
       </section>
 
       {/* Nos produits - Compact Grid */}
+      {allProducts.length > 0 && (
       <section className="py-12 sm:py-16 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
@@ -357,20 +363,25 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {allProducts.slice(0, 4).map((product, index) => (
-              <div key={index} className="premium-card rounded-xl overflow-hidden flex flex-col group relative aspect-square">
-                <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  En stock
-                </div>
+              <div key={product.id || index} className="premium-card rounded-xl overflow-hidden flex flex-col group relative aspect-square">
+                {product.in_stock !== false && (
+                  <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    En stock
+                  </div>
+                )}
                 <div className="relative h-1/2 bg-gray-100 overflow-hidden">
-                  {product.image && (
-                    <img src={product.image} alt={product.name} loading="lazy"
+                  {(product.image_url || product.image) && (
+                    <img src={product.image_url || product.image} alt={product.name} loading="lazy"
                       className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
                   )}
                 </div>
                 <div className="p-3 flex flex-col flex-grow bg-white justify-between">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
+                  {product.price != null && (
+                    <p className="text-lg font-bold text-purple-700 mb-1">${Number(product.price).toFixed(2)}</p>
+                  )}
                   <div className="flex items-center gap-1 mb-2">
                     <button type="button"
                       className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100 text-sm"
@@ -413,6 +424,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Commandes Assistées - UNIQUE */}
       <section className="py-16 sm:py-24 bg-blue-50">
