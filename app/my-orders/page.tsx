@@ -262,37 +262,27 @@ export default function MyOrdersPage() {
                     </div>
 
                     {/* Tracking Info */}
-                    {(order.miami_tracking_number || order.haiti_tracking_number) && (
+                    {order.miami_tracking_number && (
                       <div className="bg-gray-50 rounded-xl p-4 mt-4">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold text-gray-900 text-sm">Suivi du colis</h4>
                           <Link
-                            href={`/suivi?numero=${order.miami_tracking_number || order.haiti_tracking_number || order.id}`}
+                            href={`/suivi?numero=${order.miami_tracking_number}`}
                             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                           >
                             <Eye size={16} />
                             Suivi détaillé
                           </Link>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                          {order.miami_tracking_number && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">📦 Tracking Miami:</span>
-                              <span className="font-mono font-semibold text-blue-700">{order.miami_tracking_number}</span>
-                            </div>
-                          )}
-                          {order.haiti_tracking_number && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">🇭🇹 Tracking Haïti:</span>
-                              <span className="font-mono font-semibold text-green-700">{order.haiti_tracking_number}</span>
-                            </div>
-                          )}
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-gray-500">📦 Numéro de suivi:</span>
+                          <span className="font-mono font-semibold text-blue-700">{order.miami_tracking_number}</span>
                         </div>
                       </div>
                     )}
 
                     {/* Track Button for orders without tracking yet */}
-                    {!order.miami_tracking_number && !order.haiti_tracking_number && (
+                    {!order.miami_tracking_number && (
                       <div className="mt-4 text-center">
                         <Link
                           href={`/suivi?numero=${order.id}`}

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const { data: orderData } = await supabaseAdmin
     .from("wholesale_orders")
     .select("*")
-    .or(`miami_tracking_number.ilike.%${trackingNumber}%,haiti_tracking_number.ilike.%${trackingNumber}%`)
+    .or(`miami_tracking_number.ilike.%${trackingNumber}%`)
     .limit(1)
     .single();
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const { data: altOrderData } = await supabaseAdmin
     .from("orders")
     .select("*")
-    .or(`miami_tracking_number.ilike.%${trackingNumber}%,haiti_tracking_number.ilike.%${trackingNumber}%`)
+    .or(`miami_tracking_number.ilike.%${trackingNumber}%`)
     .limit(1)
     .single();
 

@@ -233,14 +233,8 @@ function TrackingContent() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       {order.miami_tracking_number && (
                         <div className="flex items-center gap-1">
-                          <span className="text-gray-400">📦 Miami:</span>
+                          <span className="text-gray-400">📦 Numéro de suivi:</span>
                           <span className="font-mono font-semibold text-blue-700">{order.miami_tracking_number}</span>
-                        </div>
-                      )}
-                      {order.haiti_tracking_number && (
-                        <div className="flex items-center gap-1">
-                          <span className="text-gray-400">🇭🇹 Haïti:</span>
-                          <span className="font-mono font-semibold text-green-700">{order.haiti_tracking_number}</span>
                         </div>
                       )}
                     </div>

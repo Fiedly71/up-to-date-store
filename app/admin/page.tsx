@@ -428,27 +428,12 @@ export default function AdminPanel() {
                                 </div>
                                 <div className="space-y-3">
                                   <div>
-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Tracking Miami</label>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Order Tracking Number</label>
                                     <input type="text" value={order.miami_tracking_number || ""}
                                       onChange={e => setAllOrders(prev => prev.map(o => o.id === order.id ? { ...o, miami_tracking_number: e.target.value } : o))}
                                       onBlur={e => updateOrderTracking(order.id, order._table, e.target.value)}
                                       className="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                                      placeholder="Numéro de tracking..." />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-semibold text-gray-600 mb-1">Tracking Haïti</label>
-                                    <input type="text" value={order.haiti_tracking_number || ""}
-                                      onChange={e => setAllOrders(prev => prev.map(o => o.id === order.id ? { ...o, haiti_tracking_number: e.target.value } : o))}
-                                      onBlur={e => {
-                                        setSavingOrder(order.id);
-                                        fetch("/api/admin/update-order", {
-                                          method: "POST",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ userId: currentUserId, orderId: order.id, table: order._table, updates: { haiti_tracking_number: e.target.value } }),
-                                        }).finally(() => setSavingOrder(null));
-                                      }}
-                                      className="border border-gray-200 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                                      placeholder="Numéro de tracking Haïti..." />
+                                      placeholder="Entrez le numéro de suivi..." />
                                   </div>
                                   {order.product_image && (
                                     <img src={order.product_image} alt="" className="w-20 h-20 object-contain rounded-lg bg-white border border-gray-200" />
