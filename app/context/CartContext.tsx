@@ -11,7 +11,7 @@ interface Product {
   color?: string;
   size?: string;
   notes?: string;
-  source?: "shop" | "aliexpress";
+  source?: string;
 }
 
 interface CartContextType {
