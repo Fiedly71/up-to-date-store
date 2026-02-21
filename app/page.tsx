@@ -363,16 +363,16 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {allProducts.slice(0, 4).map((product, index) => (
-              <div key={product.id || index} className="premium-card rounded-xl overflow-hidden flex flex-col group relative aspect-square">
+              <div key={product.id || index} className="premium-card rounded-xl overflow-hidden flex flex-col group relative">
                 {product.in_stock !== false && (
                   <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                     En stock
                   </div>
                 )}
-                <div className="relative h-1/2 bg-gray-100 overflow-hidden">
+                <div className="relative h-44 sm:h-52 bg-gray-50 overflow-hidden flex items-center justify-center">
                   {(product.image_url || product.image) && (
                     <img src={product.image_url || product.image} alt={product.name} loading="lazy"
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                      className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-300" />
                   )}
                 </div>
                 <div className="p-3 flex flex-col flex-grow bg-white justify-between">
@@ -380,7 +380,10 @@ export default function Home() {
                     {product.name}
                   </h3>
                   {product.price != null && (
-                    <p className="text-lg font-bold text-purple-700 mb-1">${Number(product.price).toFixed(2)}</p>
+                    <div className="mb-1">
+                      <p className="text-lg font-bold text-purple-700">${Number(product.price).toFixed(2)}</p>
+                      <p className="text-xs font-semibold text-orange-600">{formatGourdes(Number(product.price))}</p>
+                    </div>
                   )}
                   <div className="flex items-center gap-1 mb-2">
                     <button type="button"

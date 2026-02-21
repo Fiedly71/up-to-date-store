@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ShoppingCart, MessageCircle, Search, Sparkles } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { useCart } from '../context/CartContext';
+import { formatGourdes } from "@/app/utils/pricing";
 
 export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,11 +94,11 @@ export default function Produits() {
                   className="premium-card rounded-2xl overflow-hidden flex flex-col group"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                  <div className="relative h-48 sm:h-56 bg-gray-50 overflow-hidden flex items-center justify-center">
                     <img
                       src={product.image_url || product.image || "/UPTODATE%20logo.jpg"}
                       alt={product.name}
-                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                      className="object-contain w-full h-full group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     {/* Badge Premium */}
@@ -110,7 +111,10 @@ export default function Produits() {
                       {product.name}
                     </h3>
                     {product.price != null && (
-                      <p className="text-lg font-bold text-purple-700 mb-2">${Number(product.price).toFixed(2)}</p>
+                      <div className="mb-2">
+                        <p className="text-lg font-bold text-purple-700">${Number(product.price).toFixed(2)}</p>
+                        <p className="text-sm font-semibold text-orange-600">{formatGourdes(Number(product.price))}</p>
+                      </div>
                     )}
                     {product.description && (
                       <p className="text-xs text-gray-500 mb-2 line-clamp-2">{product.description}</p>
