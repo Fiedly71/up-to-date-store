@@ -8,6 +8,7 @@ import { ShoppingCart, Instagram } from "lucide-react";
 import CartBadge from './components/CartBadge';
 import { Analytics } from "@vercel/analytics/react";
 import CookieConsent from "@/app/components/CookieConsent";
+import RegisterSW from "@/app/components/RegisterSW";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -21,8 +22,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Up-to-Date Store",
   description: "Vente de produits électroniques et service de shipping rapide vers Haïti.",
+  manifest: "/manifest.json",
   icons: {
     icon: '/UPTODATE%20logo.jpg',
+    apple: '/icons/icon-192.png',
+  },
+  themeColor: '#7c3aed',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'UpToDate',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
   },
 };
 
@@ -37,6 +51,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthCallbackGuard />
+        <RegisterSW />
         <CartProvider>
         <div>
           {children}
