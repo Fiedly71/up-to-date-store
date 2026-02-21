@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "../components/Navbar";
+import { USD_TO_GDS_RATE } from "../utils/pricing";
 import {
   Package, Users, Settings, Shield, ShieldOff, RefreshCw, Search, ChevronDown,
   DollarSign, Calendar, TrendingUp, Eye, MapPin, Phone, Mail, User, BarChart3,
@@ -103,7 +104,7 @@ export default function AdminPanel() {
   const [products, setProducts] = useState<any[]>([]);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [productForm, setProductForm] = useState({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
+  const [productForm, setProductForm] = useState({ name: "", description: "", price: "", priceCurrency: "USD" as "USD" | "GDS", image_url: "", category: "", in_stock: true });
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [productError, setProductError] = useState("");
@@ -296,7 +297,11 @@ export default function AdminPanel() {
         ...(editingProduct ? { id: editingProduct.id } : {}),
         name: productForm.name,
         description: productForm.description,
-        price: productForm.price ? parseFloat(productForm.price) : null,
+        price: productForm.price
+          ? productForm.priceCurrency === "GDS"
+            ? parseFloat((parseFloat(productForm.price) / USD_TO_GDS_RATE).toFixed(2))
+            : parseFloat(productForm.price)
+          : null,
         image_url: productForm.image_url,
         category: productForm.category,
         in_stock: productForm.in_stock,
@@ -311,7 +316,7 @@ export default function AdminPanel() {
       setProductSuccess(editingProduct ? "Produit mis à jour !" : "Produit créé !");
       await loadProducts();
       setTimeout(() => { setShowProductForm(false); setProductSuccess(""); setEditingProduct(null); }, 1000);
-      setProductForm({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
+      setProductForm({ name: "", description: "", price: "", priceCurrency: "USD", image_url: "", category: "", in_stock: true });
     } catch (err: any) { setProductError(err.message); }
     setSavingProduct(false);
   };
@@ -337,6 +342,7 @@ export default function AdminPanel() {
       name: p.name || "",
       description: p.description || "",
       price: p.price ? String(p.price) : "",
+      priceCurrency: "USD",
       image_url: p.image_url || "",
       category: p.category || "",
       in_stock: p.in_stock !== false,
@@ -348,7 +354,7 @@ export default function AdminPanel() {
 
   const openNewProduct = () => {
     setEditingProduct(null);
-    setProductForm({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
+    setProductForm({ name: "", description: "", price: "", priceCurrency: "USD", image_url: "", category: "", in_stock: true });
     setShowProductForm(true);
     setProductError("");
     setProductSuccess("");
@@ -886,11 +892,24 @@ export default function AdminPanel() {
                           <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
                           <textarea rows={2} value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900" placeholder="Description du produit..." />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1">Prix (USD)</label>
-                            <input type="number" step="0.01" min="0" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900" placeholder="0.00" />
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Prix</label>
+                          <div className="flex gap-2">
+                            <div className="flex rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+                              <button type="button" onClick={() => setProductForm(f => ({ ...f, priceCurrency: "USD" }))} className={`px-3 py-2.5 text-xs font-bold transition ${productForm.priceCurrency === 'USD' ? 'bg-purple-600 text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>$ USD</button>
+                              <button type="button" onClick={() => setProductForm(f => ({ ...f, priceCurrency: "GDS" }))} className={`px-3 py-2.5 text-xs font-bold transition ${productForm.priceCurrency === 'GDS' ? 'bg-orange-500 text-white' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}`}>GDS</button>
+                            </div>
+                            <input type="number" step="0.01" min="0" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900" placeholder={productForm.priceCurrency === 'USD' ? '0.00 $' : '0 GDS'} />
                           </div>
+                          {productForm.price && (
+                            <p className="text-[11px] mt-1 font-medium text-gray-400">
+                              {productForm.priceCurrency === 'USD'
+                                ? `≈ ${(parseFloat(productForm.price) * USD_TO_GDS_RATE).toLocaleString('fr-HT')} GDS`
+                                : `≈ $${(parseFloat(productForm.price) / USD_TO_GDS_RATE).toFixed(2)} USD`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-1">Catégorie</label>
                             <select value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900">
