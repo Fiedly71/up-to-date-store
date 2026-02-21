@@ -23,6 +23,7 @@ export default function PanierPage() {
   const [showMonCashModal, setShowMonCashModal] = useState(false);
   const [savingOrders, setSavingOrders] = useState(false);
   const [ordersSaved, setOrdersSaved] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [copiedMoncash, setCopiedMoncash] = useState(false);
 
   useEffect(() => {
@@ -55,7 +56,8 @@ export default function PanierPage() {
   const saveAllOrdersToDatabase = async (paymentMethod: string) => {
     if (!user || cart.length === 0) return false;
     setSavingOrders(true);
-    let allSaved = true;
+    setOrderError(null);
+    let savedCount = 0;
     try {
       for (const item of cartWithPricing) {
         const res = await fetch("/api/orders/create", {
@@ -80,17 +82,18 @@ export default function PanierPage() {
             ].filter(Boolean).join(" | "),
           }),
         });
-        if (!res.ok) allSaved = false;
+        if (res.ok) savedCount++;
+      }
+      if (savedCount === 0) {
+        setOrderError("Erreur: aucune commande n'a pu être enregistrée. Réessayez.");
+        return false;
       }
       setOrdersSaved(true);
       clearCart();
       return true;
     } catch {
-      allSaved = false;
-      // Still show success if some orders saved
-      setOrdersSaved(true);
-      clearCart();
-      return allSaved;
+      setOrderError("Erreur de connexion. Vérifiez votre internet et réessayez.");
+      return false;
     } finally {
       setSavingOrders(false);
     }
@@ -336,6 +339,14 @@ ${itemsList}
                 </div>
                 <p className="text-xs text-gray-400 text-center">1 USD = {USD_TO_GDS_RATE} GDS</p>
               </div>
+
+              {/* Error message */}
+              {orderError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                  <p className="text-red-700 font-semibold text-sm">{orderError}</p>
+                  <button onClick={() => setOrderError(null)} className="mt-2 text-xs text-red-500 underline">Fermer</button>
+                </div>
+              )}
 
               {/* Auth + Payment */}
               {checkingAuth ? (

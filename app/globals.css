@@ -46,6 +46,21 @@ body {
   animation: fadeInUp 0.5s ease-out;
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s ease-out;
+}
+
 /* Premium Card Styles - No blur for performance */
 .premium-card {
   background: #ffffff;
