@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     serviceFee,
     totalWithFees,
     notes,
+    quantity,
   } = await req.json();
 
   if (!userId || !userEmail || !productName) {
@@ -29,20 +30,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 403 });
   }
 
-  // Insert order into wholesale_orders
+  // Store extra data in ali_item_id as JSON
+  const extraData = JSON.stringify({
+    user_id: userId,
+    product_url: productUrl || null,
+    product_image: productImage || null,
+    base_price: basePrice || 0,
+    service_fee: serviceFee || 0,
+    notes: notes || null,
+  });
+
+  // Insert using actual wholesale_orders columns
   const { data: order, error: insertError } = await supabaseAdmin
     .from("wholesale_orders")
     .insert({
-      user_id: userId,
       user_email: userEmail,
       product_name: productName,
-      product_url: productUrl || null,
-      product_image: productImage || null,
-      base_price: basePrice || 0,
-      service_fee: serviceFee || 0,
+      ali_item_id: extraData,
+      unit_price_usd: basePrice || 0,
+      quantity: quantity || 1,
       total_price_with_fees: totalWithFees || 0,
       order_status: "awaiting_payment",
-      notes: notes || null,
     })
     .select()
     .single();

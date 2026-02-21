@@ -99,7 +99,17 @@ export default function MyOrdersPage() {
       .select("*")
       .eq("user_email", email)
       .order("created_at", { ascending: false });
-    setOrders(ordersData || []);
+    // Parse extra data stored as JSON in ali_item_id
+    const parsed = (ordersData || []).map((o: any) => {
+      try {
+        if (o.ali_item_id && o.ali_item_id.startsWith('{')) {
+          const extra = JSON.parse(o.ali_item_id);
+          return { ...o, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
+        }
+      } catch {}
+      return o;
+    });
+    setOrders(parsed);
   };
 
   const handleRefresh = async () => {

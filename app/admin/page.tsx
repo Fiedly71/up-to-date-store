@@ -95,7 +95,17 @@ export default function AdminPanel() {
         body: JSON.stringify({ userId: uid }),
       });
       const data = await res.json();
-      const orders = (data.wholesaleOrders || []).map((o: any) => ({ ...o, _table: "wholesale_orders" }));
+      // Parse extra data stored as JSON in ali_item_id
+      const parseExtra = (o: any) => {
+        try {
+          if (o.ali_item_id && o.ali_item_id.startsWith('{')) {
+            const extra = JSON.parse(o.ali_item_id);
+            return { ...o, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
+          }
+        } catch {}
+        return o;
+      };
+      const orders = (data.wholesaleOrders || []).map((o: any) => ({ ...parseExtra(o), _table: "wholesale_orders" }));
       const legacyOrders = (data.orders || []).map((o: any) => ({ ...o, _table: "orders" }));
       const merged = [...orders, ...legacyOrders].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()

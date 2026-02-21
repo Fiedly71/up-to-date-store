@@ -107,7 +107,15 @@ function TrackingContent() {
         .single();
 
       if (orderData) {
-        setOrder(orderData);
+        // Parse extra data stored as JSON in ali_item_id
+        let parsed = orderData;
+        try {
+          if (orderData.ali_item_id && orderData.ali_item_id.startsWith('{')) {
+            const extra = JSON.parse(orderData.ali_item_id);
+            parsed = { ...orderData, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
+          }
+        } catch {}
+        setOrder(parsed);
       } else {
         const { data: altOrderData } = await supabase
           .from("orders")
