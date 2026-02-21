@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 import Navbar from "@/app/components/Navbar";
 import PriceCalculator from "./components/PriceCalculator";
-import { Search, Truck, ShoppingCart, Package, LogIn, UserPlus } from "lucide-react";
+import { Search, Truck, ShoppingCart, Package, LogIn, UserPlus, LogOut, Shield, Globe } from "lucide-react";
 import { Headphones, ChevronRight, MessageCircle, ChevronDown, Star, Facebook, Instagram, Clock, MapPin, Zap, ArrowRight } from "lucide-react";
 import { calculateFinalPrice, USD_TO_GDS_RATE, formatGourdes, getPriceBreakdown } from "@/app/utils/pricing";
 import Link from "next/link";
@@ -22,6 +22,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
@@ -31,6 +32,17 @@ export default function Home() {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        try {
+          const res = await fetch("/api/check-admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          const result = await res.json();
+          setIsAdmin(result.isAdmin === true);
+        } catch { setIsAdmin(false); }
+      }
       setCheckingAuth(false);
     };
     checkAuth();
@@ -108,21 +120,39 @@ export default function Home() {
 
             {/* Auth Buttons */}
             {!checkingAuth && !user && (
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/auth"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all"
-                >
-                  <LogIn size={22} />
-                  Se connecter
-                </Link>
-                <Link
-                  href="/auth"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-purple-300 text-purple-700 rounded-xl font-bold text-lg shadow-md hover:bg-purple-50 hover:border-purple-400 transition-all duration-300"
-                >
-                  <UserPlus size={22} />
-                  Créer un compte
-                </Link>
+              <div className="mt-8 flex flex-col items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/auth"
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all"
+                  >
+                    <LogIn size={22} />
+                    Se connecter
+                  </Link>
+                  <Link
+                    href="/auth"
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-purple-300 text-purple-700 rounded-xl font-bold text-lg shadow-md hover:bg-purple-50 hover:border-purple-400 transition-all"
+                  >
+                    <UserPlus size={22} />
+                    Créer un compte
+                  </Link>
+                </div>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Link
+                    href="/aliexpress"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg hover:from-orange-600 hover:to-red-600 transition-all"
+                  >
+                    <ShoppingCart size={20} />
+                    AliExpress
+                  </Link>
+                  <Link
+                    href="/commander"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all"
+                  >
+                    <Globe size={20} />
+                    Shein / Temu / Amazon
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -132,21 +162,47 @@ export default function Home() {
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   Connecté: {user.email}
                 </div>
-                <div className="flex flex-wrap justify-center gap-4">
+                <div className="flex flex-wrap justify-center gap-3">
                   <Link
                     href="/aliexpress"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg hover:from-orange-600 hover:to-red-600 transition-all duration-300"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg hover:from-orange-600 hover:to-red-600 transition-all"
                   >
                     <ShoppingCart size={20} />
-                    Commander sur AliExpress
+                    AliExpress
                   </Link>
                   <Link
-                    href="/my-orders"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-xl font-bold shadow-md hover:bg-blue-50 transition-all duration-300"
+                    href="/commander"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all"
                   >
-                    <Package size={20} />
-                    Mes commandes
+                    <Globe size={20} />
+                    Shein / Temu / Amazon
                   </Link>
+                </div>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {isAdmin ? (
+                    <Link
+                      href="/admin"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-bold shadow-md hover:from-purple-800 hover:to-indigo-800 transition-all"
+                    >
+                      <Shield size={20} />
+                      Dashboard Admin
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/my-orders"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-xl font-bold shadow-md hover:bg-blue-50 transition-all"
+                    >
+                      <Package size={20} />
+                      Mes commandes
+                    </Link>
+                  )}
+                  <button
+                    onClick={async () => { await supabase.auth.signOut(); window.location.href = '/'; }}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-xl font-bold shadow-md hover:bg-gray-900 transition-all"
+                  >
+                    <LogOut size={20} />
+                    Déconnexion
+                  </button>
                 </div>
               </div>
             )}
