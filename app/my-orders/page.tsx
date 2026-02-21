@@ -94,22 +94,28 @@ export default function MyOrdersPage() {
 
   const loadOrders = async (email: string) => {
     if (!email) return setOrders([]);
-    const { data: ordersData } = await supabase
-      .from("wholesale_orders")
-      .select("*")
-      .eq("user_email", email)
-      .order("created_at", { ascending: false });
-    // Parse extra data stored as JSON in ali_item_id
-    const parsed = (ordersData || []).map((o: any) => {
-      try {
-        if (o.ali_item_id && o.ali_item_id.startsWith('{')) {
-          const extra = JSON.parse(o.ali_item_id);
-          return { ...o, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
-        }
-      } catch {}
-      return o;
-    });
-    setOrders(parsed);
+    try {
+      const res = await fetch("/api/my-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      const ordersData = data.orders || [];
+      // Parse extra data stored as JSON in ali_item_id
+      const parsed = ordersData.map((o: any) => {
+        try {
+          if (o.ali_item_id && o.ali_item_id.startsWith('{')) {
+            const extra = JSON.parse(o.ali_item_id);
+            return { ...o, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
+          }
+        } catch {}
+        return o;
+      });
+      setOrders(parsed);
+    } catch {
+      setOrders([]);
+    }
   };
 
   const handleRefresh = async () => {

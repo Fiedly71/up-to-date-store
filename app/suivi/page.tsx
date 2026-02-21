@@ -99,35 +99,26 @@ function TrackingContent() {
     setSearched(true);
 
     try {
-      const { data: orderData } = await supabase
-        .from("wholesale_orders")
-        .select("*")
-        .or(`miami_tracking_number.ilike.%${numberToSearch}%,haiti_tracking_number.ilike.%${numberToSearch}%`)
-        .limit(1)
-        .single();
+      const res = await fetch("/api/tracking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackingNumber: numberToSearch }),
+      });
+      const data = await res.json();
 
-      if (orderData) {
+      if (data.order) {
         // Parse extra data stored as JSON in ali_item_id
-        let parsed = orderData;
+        let parsed = data.order;
         try {
-          if (orderData.ali_item_id && orderData.ali_item_id.startsWith('{')) {
-            const extra = JSON.parse(orderData.ali_item_id);
-            parsed = { ...orderData, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
+          if (parsed.ali_item_id && parsed.ali_item_id.startsWith('{')) {
+            const extra = JSON.parse(parsed.ali_item_id);
+            parsed = { ...parsed, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
           }
         } catch {}
         setOrder(parsed);
-      } else {
-        const { data: altOrderData } = await supabase
-          .from("orders")
-          .select("*")
-          .or(`miami_tracking_number.ilike.%${numberToSearch}%,haiti_tracking_number.ilike.%${numberToSearch}%`)
-          .limit(1)
-          .single();
-
-        if (altOrderData) setOrder(altOrderData);
       }
     } catch {
-      // Supabase search failed silently
+      // Search failed silently
     }
     setLoading(false);
   };
