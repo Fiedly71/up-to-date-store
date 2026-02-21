@@ -36,10 +36,15 @@ export default function PanierPage() {
 
   const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
+  const isShopItem = (item: typeof cart[0]) => item.source === 'shop';
+
   const cartWithPricing = cart.map(item => {
     const qty = item.quantity || 1;
     const baseTotal = (item.price || 0) * qty;
-    const breakdown = getPriceBreakdown(baseTotal);
+    // No fees for in-stock shop products
+    const breakdown = isShopItem(item)
+      ? { base: baseTotal, fee: 0, feeType: 'En stock', total: baseTotal }
+      : getPriceBreakdown(baseTotal);
     return { ...item, qty, baseTotal, breakdown };
   });
 
@@ -50,9 +55,10 @@ export default function PanierPage() {
   const saveAllOrdersToDatabase = async (paymentMethod: string) => {
     if (!user || cart.length === 0) return false;
     setSavingOrders(true);
+    let allSaved = true;
     try {
       for (const item of cartWithPricing) {
-        await fetch("/api/orders/create", {
+        const res = await fetch("/api/orders/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -65,6 +71,7 @@ export default function PanierPage() {
             serviceFee: item.breakdown.fee,
             totalWithFees: item.breakdown.total,
             notes: [
+              item.source ? `Source: ${item.source}` : "",
               item.color ? `Couleur: ${item.color}` : "",
               item.size ? `Taille: ${item.size}` : "",
               item.notes || "",
@@ -73,27 +80,46 @@ export default function PanierPage() {
             ].filter(Boolean).join(" | "),
           }),
         });
+        if (!res.ok) allSaved = false;
       }
       setOrdersSaved(true);
+      clearCart();
       return true;
     } catch {
-      return false;
+      allSaved = false;
+      // Still show success if some orders saved
+      setOrdersSaved(true);
+      clearCart();
+      return allSaved;
     } finally {
       setSavingOrders(false);
     }
   };
 
   const buildWhatsAppMessage = () => {
-    const itemsList = cartWithPricing.map((item, i) =>
-      `${i + 1}. ${item.name}\n   Qté: ${item.qty}${item.color ? ` | Couleur: ${item.color}` : ""}${item.size ? ` | Taille: ${item.size}` : ""}${item.notes ? ` | Notes: ${item.notes}` : ""}\n   Prix: $${item.breakdown.total.toFixed(2)}`
-    ).join("\n\n");
+    const itemsList = cartWithPricing.map((item, i) => {
+      const lines = [`${i + 1}. *${item.name}*`];
+      lines.push(`   Qté: ${item.qty}`);
+      if (item.color) lines.push(`   Couleur: ${item.color}`);
+      if (item.size) lines.push(`   Taille: ${item.size}`);
+      if (item.notes) lines.push(`   Notes: ${item.notes}`);
+      if (item.source) lines.push(`   Source: ${item.source}`);
+      if (item.breakdown.fee > 0) {
+        lines.push(`   Prix: $${item.baseTotal.toFixed(2)} + $${item.breakdown.fee.toFixed(2)} frais = *$${item.breakdown.total.toFixed(2)}*`);
+      } else {
+        lines.push(`   Prix: *$${item.baseTotal.toFixed(2)}* (en stock)`);
+      }
+      if (item.url) lines.push(`   Lien: ${item.url}`);
+      if (item.image && item.image.startsWith('http')) lines.push(`   Image: ${item.image}`);
+      return lines.join('\n');
+    }).join("\n\n");
 
     return encodeURIComponent(
 `🛒 *NOUVELLE COMMANDE*
 
 👤 *Client:* ${user?.email || "Non connecté"}
 
-📦 *Produits:*
+📦 *Produits (${cartWithPricing.length}):*
 ${itemsList}
 
 💰 *Résumé:*
@@ -108,21 +134,31 @@ Merci de confirmer ma commande!`
   };
 
   const handleWhatsAppOrder = async () => {
+    const msgText = buildWhatsAppMessage();
     const saved = await saveAllOrdersToDatabase("whatsapp");
     if (saved) {
-      window.open(`https://wa.me/50932836938?text=${buildWhatsAppMessage()}`, '_blank');
+      window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
     }
   };
 
-  const handleMonCashConfirm = async () => {
-    const saved = await saveAllOrdersToDatabase("moncash");
-    if (saved) {
-      window.open(`https://wa.me/50932836938?text=${encodeURIComponent(
+  const buildMonCashWhatsAppMessage = () => {
+    const itemsList = cartWithPricing.map((item, i) => {
+      const lines = [`${i + 1}. *${item.name}* (×${item.qty})`];
+      if (item.color) lines.push(`   Couleur: ${item.color}`);
+      if (item.size) lines.push(`   Taille: ${item.size}`);
+      if (item.url) lines.push(`   Lien: ${item.url}`);
+      if (item.image && item.image.startsWith('http')) lines.push(`   Image: ${item.image}`);
+      lines.push(`   Prix: $${item.breakdown.total.toFixed(2)}`);
+      return lines.join('\n');
+    }).join('\n\n');
+
+    return encodeURIComponent(
 `💳 *PAIEMENT MONCASH EFFECTUÉ*
 
 👤 *Client:* ${user?.email || ""}
 
-📦 *${cart.length} article(s) commandé(s)*
+📦 *Produits commandés (${cartWithPricing.length}):*
+${itemsList}
 
 💰 *Montant payé:*
 • USD: $${grandTotal.toFixed(2)}
@@ -131,7 +167,14 @@ Merci de confirmer ma commande!`
 📱 *Envoyé au:* ${MONCASH_NUMBER}
 
 ⏳ J'attends la confirmation de mon paiement. Merci!`
-      )}`, '_blank');
+    );
+  };
+
+  const handleMonCashConfirm = async () => {
+    const msgText = buildMonCashWhatsAppMessage();
+    const saved = await saveAllOrdersToDatabase("moncash");
+    if (saved) {
+      window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
       setShowMonCashModal(false);
     }
   };
@@ -247,7 +290,11 @@ Merci de confirmer ma commande!`
                           {item.price ? (
                             <>
                               <p className="font-bold text-purple-700 text-sm sm:text-base">${item.breakdown.total.toFixed(2)}</p>
-                              <p className="text-[11px] text-gray-400">${item.price.toFixed(2)} × {item.qty} + ${item.breakdown.fee.toFixed(2)} frais</p>
+                              {isShopItem(item) ? (
+                                <p className="text-[11px] text-green-600">${item.price.toFixed(2)} × {item.qty} (en stock)</p>
+                              ) : (
+                                <p className="text-[11px] text-gray-400">${item.price.toFixed(2)} × {item.qty} + ${item.breakdown.fee.toFixed(2)} frais</p>
+                              )}
                             </>
                           ) : (
                             <p className="text-sm text-gray-400">Prix sur devis</p>

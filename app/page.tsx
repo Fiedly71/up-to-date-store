@@ -393,7 +393,7 @@ export default function Home() {
                       const quantity = productQuantities[product.id] || 0;
                       if (quantity <= 0) return;
                       removeFromCart(product.id);
-                      addToCart(product, quantity);
+                      addToCart({ ...product, source: 'shop' }, quantity);
                     }}
                     disabled={!productQuantities[product.id]}
                     className={`w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center gap-1 ${!productQuantities[product.id] ? 'opacity-40 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'}`}

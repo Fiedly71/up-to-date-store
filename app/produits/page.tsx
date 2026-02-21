@@ -197,7 +197,7 @@ export default function Produits() {
                           const quantity = productQuantities[product.id] || 0;
                           if (quantity <= 0) return;
                           removeFromCart(product.id);
-                          addToCart(product, quantity);
+                          addToCart({ ...product, source: 'shop' }, quantity);
                         }}
                         disabled={productQuantities[product.id] === 0}
                         className={`premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md w-full ${productQuantities[product.id] === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'}`}
