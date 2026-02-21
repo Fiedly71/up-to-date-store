@@ -19,16 +19,16 @@ const ORDER_STATUS_CONFIG: { [key: string]: { label: string; color: string; icon
     description: "Veuillez effectuer le paiement pour confirmer votre commande"
   },
   processing: {
-    label: "En traitement",
+    label: "Commandé (Chine)",
     color: "bg-blue-100 text-blue-800 border-blue-300",
     icon: ShoppingBag,
-    description: "Votre commande a été passée sur AliExpress"
+    description: "Votre commande a été passée et est en préparation en Chine"
   },
-  shipped_to_miami: {
-    label: "Expédié vers Miami",
+  shipped_to_usa: {
+    label: "Expédié vers USA",
     color: "bg-purple-100 text-purple-800 border-purple-300",
     icon: Truck,
-    description: "Votre colis est en route vers notre entrepôt à Miami"
+    description: "Votre colis est en route depuis la Chine vers les États-Unis"
   },
   arrived_miami: {
     label: "Arrivé à Miami",
@@ -36,14 +36,14 @@ const ORDER_STATUS_CONFIG: { [key: string]: { label: string; color: string; icon
     icon: MapPin,
     description: "Votre colis est arrivé à notre entrepôt de Miami"
   },
-  shipped_to_haiti: {
-    label: "En route vers Haïti",
+  shipped_to_dr: {
+    label: "Départ pour Rép. Dominicaine",
     color: "bg-cyan-100 text-cyan-800 border-cyan-300",
     icon: Truck,
-    description: "Votre colis est en route de Miami vers Haïti"
+    description: "Votre colis est en route de Miami vers la République Dominicaine"
   },
-  arrived_haiti: {
-    label: "Arrivé en Haïti",
+  available_champin: {
+    label: "Disponible à Champin",
     color: "bg-green-100 text-green-800 border-green-300",
     icon: MapPin,
     description: "Votre colis est prêt à être récupéré à Champin, Cap-Haïtien"

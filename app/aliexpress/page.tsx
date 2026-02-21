@@ -2,17 +2,11 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Link2, ShoppingCart, ExternalLink, MessageCircle, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight, Wallet, X, Copy, LogIn, UserPlus } from "lucide-react";
+import { Search, Link2, ShoppingCart, ExternalLink, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight, X, MessageCircle } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { getPriceBreakdown, USD_TO_GDS_RATE, formatGourdes } from "@/app/utils/pricing";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { detectSessionInUrl: false } }
-);
+import { useCart } from "@/app/context/CartContext";
 
 interface SearchProduct {
   itemId: string;
@@ -22,6 +16,11 @@ interface SearchProduct {
   originalPrice?: number;
   sales?: string;
   url: string;
+}
+
+interface ProductProperty {
+  name: string;
+  values: string[];
 }
 
 interface ProductDetails {
@@ -37,6 +36,7 @@ interface ProductDetails {
   reviews?: number;
   orders?: number;
   url: string;
+  properties: ProductProperty[];
 }
 
 // Wrapper component that uses useSearchParams
@@ -67,36 +67,12 @@ function AliExpressContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [orderNotes, setOrderNotes] = useState("");
-  const [orderColor, setOrderColor] = useState("");
-  const [orderSize, setOrderSize] = useState("");
-  const [showMonCashModal, setShowMonCashModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [savingOrder, setSavingOrder] = useState(false);
-  const [orderSaved, setOrderSaved] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [addedToCart, setAddedToCart] = useState(false);
 
-  const MONCASH_NUMBER = "39934388";
-
-  // Check authentication
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setCheckingAuth(false);
-    };
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { addToCart } = useCart();
 
   const popularSearches = ["iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch", "USB-C cable", "Power bank"];
-  const commonColors = ["Noir", "Blanc", "Rouge", "Bleu", "Rose", "Vert"];
-  const commonSizes = ["S", "M", "L", "XL", "XXL", "Unique"];
 
   // Handle search from URL parameter (called by SearchParamsHandler)
   const handleSearchFromUrl = async (searchTerm: string) => {
@@ -230,9 +206,8 @@ function AliExpressContent() {
     // Reset order options when viewing a new product
     setOrderQuantity(1);
     setOrderNotes("");
-    setOrderColor("");
-    setOrderSize("");
-    setOrderSaved(false);
+    setSelectedVariants({});
+    setAddedToCart(false);
 
     try {
       const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_detail_2?itemId=${itemId}`, {
@@ -261,6 +236,33 @@ function AliExpressContent() {
         price = parseFloat(item.price);
       }
 
+      // Extract properties/variants from the API response
+      const properties: ProductProperty[] = [];
+      if (item.properties) {
+        item.properties.forEach((prop: any) => {
+          if (prop.name && prop.values && prop.values.length > 0) {
+            properties.push({
+              name: prop.name,
+              values: prop.values.map((v: any) => typeof v === "string" ? v : v.name || v.value || String(v)),
+            });
+          }
+        });
+      }
+      // Also check sku.properties
+      if (item.sku?.properties) {
+        item.sku.properties.forEach((prop: any) => {
+          if (prop.name && prop.values && prop.values.length > 0) {
+            const existing = properties.find(p => p.name === prop.name);
+            if (!existing) {
+              properties.push({
+                name: prop.name,
+                values: prop.values.map((v: any) => typeof v === "string" ? v : v.name || v.value || String(v)),
+              });
+            }
+          }
+        });
+      }
+
       const productDetails: ProductDetails = {
         itemId: itemId,
         title: item.title || "Produit AliExpress",
@@ -272,7 +274,8 @@ function AliExpressContent() {
         ratings: item.averageStarRate,
         reviews: item.totalReviews,
         orders: item.sales,
-        url: url
+        url: url,
+        properties: properties,
       };
 
       setSelectedProduct(productDetails);
@@ -320,50 +323,25 @@ function AliExpressContent() {
     return { basePrice: price, fee: breakdown.fee, total: breakdown.total };
   };
 
-  // Save order to database when client confirms
-  const saveOrderToDatabase = async (paymentMethod: "whatsapp" | "moncash"): Promise<boolean> => {
-    if (!user || !selectedProduct || orderSaved || savingOrder) return false;
-
-    setSavingOrder(true);
-    try {
-      const priceInfo = calculateTotalPrice(selectedProduct.price * orderQuantity);
-
-      const orderDetails = [
-        `Quantité: ${orderQuantity}`,
-        orderColor ? `Couleur: ${orderColor}` : null,
-        orderSize ? `Taille: ${orderSize}` : null,
-        orderNotes ? `Notes client: ${orderNotes}` : null,
-        `Paiement: ${paymentMethod === "moncash" ? "MonCash" : "WhatsApp"}`,
-      ].filter(Boolean).join(" | ");
-
-      const imageUrl = selectedProduct.images?.[0]
-        ? (selectedProduct.images[0].startsWith("//") ? `https:${selectedProduct.images[0]}` : selectedProduct.images[0])
-        : "";
-
-      const res = await fetch("/api/orders/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
-          productName: selectedProduct.title,
-          productUrl: selectedProduct.url,
-          productImage: imageUrl,
-          basePrice: selectedProduct.price * orderQuantity,
-          serviceFee: priceInfo.fee,
-          totalWithFees: priceInfo.total,
-          notes: orderDetails,
-        }),
-      });
-
-      if (!res.ok) return false;
-      setOrderSaved(true);
-      return true;
-    } catch {
-      return false;
-    } finally {
-      setSavingOrder(false);
-    }
+  const handleAddToCart = () => {
+    if (!selectedProduct) return;
+    const imageUrl = selectedProduct.images?.[0]
+      ? (selectedProduct.images[0].startsWith("//") ? `https:${selectedProduct.images[0]}` : selectedProduct.images[0])
+      : "";
+    const variantStr = Object.entries(selectedVariants).map(([k, v]) => `${k}: ${v}`).join(", ");
+    addToCart({
+      id: `ali-${selectedProduct.itemId}-${variantStr}`,
+      name: selectedProduct.title,
+      image: imageUrl,
+      price: selectedProduct.price,
+      url: selectedProduct.url,
+      color: selectedVariants["Color"] || selectedVariants["Couleur"] || "",
+      size: selectedVariants["Size"] || selectedVariants["Taille"] || "",
+      notes: [variantStr, orderNotes].filter(Boolean).join(" | "),
+      source: "aliexpress",
+    }, orderQuantity);
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 3000);
   };
 
   return (
@@ -726,45 +704,27 @@ function AliExpressContent() {
                           </div>
                         </div>
 
-                        {/* Color Selection */}
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">Couleur (optionnel)</label>
-                          <div className="flex flex-wrap gap-2">
-                            {commonColors.map((color) => (
-                              <button
-                                key={color}
-                                onClick={() => setOrderColor(orderColor === color ? "" : color)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                  orderColor === color
-                                    ? "bg-purple-600 text-white shadow-md"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                }`}
-                              >
-                                {color}
-                              </button>
-                            ))}
+                        {/* Dynamic Variant Selection */}
+                        {selectedProduct.properties.length > 0 && selectedProduct.properties.map((prop) => (
+                          <div key={prop.name}>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">{prop.name}</label>
+                            <div className="flex flex-wrap gap-2">
+                              {prop.values.map((val) => (
+                                <button
+                                  key={val}
+                                  onClick={() => setSelectedVariants(prev => ({ ...prev, [prop.name]: prev[prop.name] === val ? "" : val }))}
+                                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                    selectedVariants[prop.name] === val
+                                      ? "bg-purple-600 text-white shadow-md"
+                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                  }`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Size Selection */}
-                        <div>
-                          <label className="block text-sm font-bold text-gray-700 mb-2">Taille (optionnel)</label>
-                          <div className="flex flex-wrap gap-2">
-                            {commonSizes.map((size) => (
-                              <button
-                                key={size}
-                                onClick={() => setOrderSize(orderSize === size ? "" : size)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                  orderSize === size
-                                    ? "bg-purple-600 text-white shadow-md"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                }`}
-                              >
-                                {size}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        ))}
 
                         {/* Notes */}
                         <div>
@@ -820,104 +780,30 @@ function AliExpressContent() {
 
                       {/* Action Buttons */}
                       <div className="space-y-3">
-                        {/* Login Required Message */}
-                        {!user && !checkingAuth && (
-                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                              <LogIn className="text-white" size={28} />
-                            </div>
-                            <h4 className="text-xl font-bold text-gray-900 mb-2">Connexion requise</h4>
-                            <p className="text-gray-600 mb-4">
-                              Connectez-vous pour passer votre commande et suivre son état
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                              <Link
-                                href="/auth"
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all"
-                              >
-                                <LogIn size={20} />
-                                Se connecter
+                        {/* Add to Cart */}
+                        {addedToCart ? (
+                          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-200 text-center">
+                            <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
+                            <h4 className="text-lg font-bold text-green-800 mb-1">Ajouté au panier !</h4>
+                            <div className="flex gap-3 justify-center mt-3">
+                              <Link href="/panier" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition text-sm">
+                                <ShoppingCart size={16} /> Voir le panier
                               </Link>
-                              <Link
-                                href="/auth"
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-xl font-bold hover:bg-purple-50 transition-all"
-                              >
-                                <UserPlus size={20} />
-                                Créer un compte
-                              </Link>
+                              <button onClick={() => setAddedToCart(false)} className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition text-sm">
+                                Continuer
+                              </button>
                             </div>
                           </div>
+                        ) : (
+                          <button
+                            onClick={handleAddToCart}
+                            className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]"
+                          >
+                            <ShoppingCart size={24} />
+                            Ajouter au panier
+                          </button>
                         )}
 
-                        {/* Order Buttons - Only show when logged in */}
-                        {user && (
-                          <>
-                            {/* Order saved confirmation */}
-                            {orderSaved && (
-                              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-200 text-center">
-                                <CheckCircle className="text-green-600 mx-auto mb-2" size={32} />
-                                <h4 className="text-lg font-bold text-green-800 mb-1">Commande enregistrée !</h4>
-                                <p className="text-green-700 text-sm mb-3">Votre commande a été sauvegardée. Suivez son état dans &quot;Mes Commandes&quot;.</p>
-                                <Link href="/my-orders" className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition text-sm">
-                                  <Package size={16} /> Voir mes commandes
-                                </Link>
-                              </div>
-                            )}
-
-                            {!orderSaved && (
-                              <>
-                                {/* MonCash Payment */}
-                                <button
-                                  onClick={() => setShowMonCashModal(true)}
-                                  disabled={savingOrder}
-                                  className="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
-                                >
-                                  <Wallet size={24} />
-                                  Payer avec MonCash
-                                </button>
-                            
-                                {/* WhatsApp Order */}
-                                <button
-                                  onClick={async () => {
-                                    await saveOrderToDatabase("whatsapp");
-                                    window.open(`https://wa.me/50932836938?text=${encodeURIComponent(
-`🛒 *NOUVELLE COMMANDE ALIEXPRESS*
-
-👤 *Client:* ${user.email}
-
-📦 *Produit:* ${selectedProduct.title}
-
-📊 *Détails de la commande:*
-• Quantité: ${orderQuantity}${orderColor ? `\n• Couleur: ${orderColor}` : ''}${orderSize ? `\n• Taille: ${orderSize}` : ''}${orderNotes ? `\n• Notes: ${orderNotes}` : ''}
-
-💰 *Prix:*
-• Prix unitaire: $${selectedProduct.price.toFixed(2)}
-• Sous-total: $${(selectedProduct.price * orderQuantity).toFixed(2)}
-• Frais de service: $${calculateTotalPrice(selectedProduct.price * orderQuantity).fee.toFixed(2)}
-• *TOTAL USD: $${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}*
-• *TOTAL GDS: ${formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}*
-_(Taux: 1 USD = ${USD_TO_GDS_RATE} GDS)_
-
-🔗 *Lien du produit:*
-${selectedProduct.url}
-
-Merci de confirmer ma commande!`
-                                    )}`, '_blank');
-                                  }}
-                                  disabled={savingOrder}
-                                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
-                                >
-                                  {savingOrder ? (
-                                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                  ) : (
-                                    <MessageCircle size={24} />
-                                  )}
-                                  Commander sur WhatsApp
-                                </button>
-                              </>
-                            )}
-                          </>
-                        )}
                         <a
                           href={selectedProduct.url}
                           target="_blank"
@@ -931,17 +817,17 @@ Merci de confirmer ma commande!`
                     </div>
                   </div>
 
-                  {/* Next Steps */}
+                  {/* How it works */}
                   <div className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
                     <h4 className="font-bold text-green-800 mb-4 flex items-center gap-2">
                       <Clock size={20} />
-                      Prochaines étapes après votre commande
+                      Comment commander ?
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       {[
-                        { step: "1", title: "Confirmez", desc: "Via WhatsApp avec notre équipe" },
-                        { step: "2", title: "Payez", desc: "MonCash, Cash ou Carte" },
-                        { step: "3", title: "Suivez", desc: "Recevez votre numéro de tracking" },
+                        { step: "1", title: "Ajoutez", desc: "Ajoutez au panier" },
+                        { step: "2", title: "Payez", desc: "MonCash ou WhatsApp dans le panier" },
+                        { step: "3", title: "Suivez", desc: "Recevez votre tracking" },
                         { step: "4", title: "Récupérez", desc: "À Champin en 7-15 jours" },
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-start gap-3">
@@ -1004,139 +890,7 @@ Merci de confirmer ma commande!`
         </div>
       </section>
 
-      {/* MonCash Payment Modal */}
-      {showMonCashModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4 flex items-center justify-between rounded-t-3xl">
-              <div className="flex items-center gap-3 text-white">
-                <Wallet size={24} />
-                <span className="font-bold text-lg">Paiement MonCash</span>
-              </div>
-              <button
-                onClick={() => setShowMonCashModal(false)}
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-6">
-              {/* Order Summary */}
-              <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-                <h4 className="font-bold text-gray-900 mb-3">Résumé de la commande</h4>
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{selectedProduct.title}</p>
-                <div className="space-y-2 pt-2 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total USD:</span>
-                    <span className="font-bold text-lg text-gray-900">
-                      ${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center bg-orange-100 -mx-4 px-4 py-2 rounded-lg">
-                    <span className="text-orange-800 font-medium">Total en Gourdes:</span>
-                    <span className="font-extrabold text-xl text-orange-600">
-                      {formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 text-center">Taux: 1 USD = {USD_TO_GDS_RATE} GDS</p>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="space-y-4">
-                <h4 className="font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm">1</span>
-                  Envoyez le montant via MonCash
-                </h4>
-                
-                {/* MonCash Number Box */}
-                <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-2xl p-5">
-                  <p className="text-sm text-gray-600 mb-2">Numéro MonCash:</p>
-                  <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-orange-200">
-                    <span className="text-2xl font-bold text-orange-600 tracking-wider">{MONCASH_NUMBER}</span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(MONCASH_NUMBER);
-                        alert("Numéro copié!");
-                      }}
-                      className="flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium text-sm bg-orange-50 px-3 py-2 rounded-lg transition-colors"
-                    >
-                      <Copy size={16} />
-                      Copier
-                    </button>
-                  </div>
-                  <div className="mt-3 bg-white rounded-lg p-3 border border-orange-200">
-                    <p className="text-sm text-gray-700 font-medium">Montant à envoyer:</p>
-                    <p className="text-2xl font-bold text-orange-600">{formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}</p>
-                    <p className="text-xs text-gray-500">(${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)} USD)</p>
-                  </div>
-                </div>
-
-                <h4 className="font-bold text-gray-900 flex items-center gap-2 pt-2">
-                  <span className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm">2</span>
-                  Confirmez votre paiement
-                </h4>
-                
-                <p className="text-gray-600 text-sm">
-                  Après avoir effectué le transfert MonCash, envoyez-nous une confirmation sur WhatsApp avec:
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  <li>• Votre nom complet</li>
-                  <li>• Le numéro de transaction MonCash</li>
-                  <li>• Capture d&apos;écran du paiement (optionnel)</li>
-                </ul>
-
-                {/* Confirm Button */}
-                <button
-                  onClick={async () => {
-                    await saveOrderToDatabase("moncash");
-                    window.open(`https://wa.me/50932836938?text=${encodeURIComponent(
-`💳 *PAIEMENT MONCASH EFFECTUÉ*
-
-👤 *Client:* ${user?.email || 'Non connecté'}
-
-📦 *Commande:* ${selectedProduct.title}
-
-📊 *Détails:*
-• Quantité: ${orderQuantity}${orderColor ? `\n• Couleur: ${orderColor}` : ''}${orderSize ? `\n• Taille: ${orderSize}` : ''}${orderNotes ? `\n• Notes: ${orderNotes}` : ''}
-
-💰 *Montant payé:*
-• USD: $${calculateTotalPrice(selectedProduct.price * orderQuantity).total.toFixed(2)}
-• GDS: ${formatGourdes(calculateTotalPrice(selectedProduct.price * orderQuantity).total)}
-
-📱 *Envoyé au:* ${MONCASH_NUMBER}
-
-🔗 *Produit:* ${selectedProduct.url}
-
-⏳ J'attends la confirmation de mon paiement. Merci!`
-                    )}`, '_blank');
-                    setShowMonCashModal(false);
-                  }}
-                  disabled={savingOrder || orderSaved}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50"
-                >
-                  {savingOrder ? (
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <MessageCircle size={22} />
-                  )}
-                  J&apos;ai payé - Confirmer sur WhatsApp
-                </button>
-
-                <button
-                  onClick={() => setShowMonCashModal(false)}
-                  className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold hover:border-gray-300 transition-all"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

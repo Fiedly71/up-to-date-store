@@ -6,12 +6,20 @@ interface Product {
   name: string;
   image: string;
   quantity?: number;
+  price?: number;
+  url?: string;
+  color?: string;
+  size?: string;
+  notes?: string;
+  source?: "shop" | "aliexpress";
 }
 
 interface CartContextType {
   cart: Product[];
   addToCart: (product: Product, quantity: number) => void;
   removeFromCart: (productId: string | number) => void;
+  clearCart: () => void;
+  updateQuantity: (productId: string | number, quantity: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -38,11 +46,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addToCart = (product: Product, quantity: number) => {
     setCart((prev) => {
-      const exists = prev.find((item) => item.id === product.id);
+      // For AliExpress products, use itemId+color+size as unique key
+      const matchId = product.id;
+      const exists = prev.find((item) => item.id === matchId && item.color === product.color && item.size === product.size);
       if (exists) {
         return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: (item.quantity || 0) + quantity } // Increment quantity
+          item.id === matchId && item.color === product.color && item.size === product.size
+            ? { ...item, quantity: (item.quantity || 0) + quantity }
             : item
         );
       }
@@ -54,8 +64,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  const updateQuantity = (id: string | number, quantity: number) => {
+    if (quantity < 1) return;
+    setCart((prev) => prev.map((item) => item.id === id ? { ...item, quantity } : item));
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, updateQuantity }}>
       {children}
     </CartContext.Provider>
   );

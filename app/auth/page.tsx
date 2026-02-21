@@ -44,14 +44,12 @@ export default function AuthPage() {
     // Listen for Supabase auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY' && session) {
-        // Save tokens in memory (NOT localStorage) then immediately clear the session
+        // Save tokens in memory — DO NOT sign out, keep session alive for password update
         savedTokens.current = {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         };
         isManualLogin.current = true;
-        // Clear session from localStorage so navigating away = not logged in
-        await supabase.auth.signOut({ scope: 'local' });
         setAuthMode('reset');
         setSuccess("Entrez votre nouveau mot de passe.");
         window.history.replaceState(null, '', '/auth');
@@ -60,13 +58,12 @@ export default function AuthPage() {
 
       if (event === 'SIGNED_IN' && session) {
         if (hashType === 'invite') {
-          // Save tokens in memory then clear session
+          // Save tokens in memory — DO NOT sign out, keep session alive
           savedTokens.current = {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
           };
           isManualLogin.current = true;
-          await supabase.auth.signOut({ scope: 'local' });
           setAuthMode('reset');
           setSuccess("Bienvenue ! Créez votre mot de passe pour activer votre compte.");
           window.history.replaceState(null, '', '/auth');
@@ -156,16 +153,18 @@ export default function AuthPage() {
         throw new Error("Session expirée. Veuillez demander un nouveau lien de réinitialisation.");
       }
 
-      // Restore the session temporarily using the saved tokens
-      const { error: sessionError } = await supabase.auth.setSession(savedTokens.current);
-      if (sessionError) throw sessionError;
-
-      // Update the password
+      // Update the password (session is already active from recovery/invite flow)
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
-      if (error) throw error;
+      if (error) {
+        // If session expired, try restoring it first
+        const { error: sessionError } = await supabase.auth.setSession(savedTokens.current);
+        if (sessionError) throw new Error("Session expirée. Veuillez demander un nouveau lien.");
+        const { error: retryError } = await supabase.auth.updateUser({ password: newPassword });
+        if (retryError) throw retryError;
+      }
 
       // Sign out completely so user must log in with new password
       savedTokens.current = null;
