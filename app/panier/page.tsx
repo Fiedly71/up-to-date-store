@@ -56,6 +56,7 @@ export default function PanierPage() {
     setSavingOrders(true);
     setOrderError(null);
     let savedCount = 0;
+    let lastError = "";
     try {
       for (const item of cartWithPricing) {
         const res = await fetch("/api/orders/create", {
@@ -80,17 +81,22 @@ export default function PanierPage() {
             ].filter(Boolean).join(" | "),
           }),
         });
-        if (res.ok) savedCount++;
+        if (res.ok) {
+          savedCount++;
+        } else {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          lastError = err.error || `HTTP ${res.status}`;
+        }
       }
       if (savedCount === 0) {
-        setOrderError("Erreur: aucune commande n'a pu être enregistrée. Réessayez.");
+        setOrderError(`Erreur: ${lastError || "aucune commande n'a pu être enregistrée"}. Réessayez.`);
         return false;
       }
       setOrdersSaved(true);
       clearCart();
       return true;
-    } catch {
-      setOrderError("Erreur de connexion. Vérifiez votre internet et réessayez.");
+    } catch (e: any) {
+      setOrderError(`Erreur de connexion: ${e?.message || "Vérifiez votre internet"}. Réessayez.`);
       return false;
     } finally {
       setSavingOrders(false);
@@ -132,10 +138,15 @@ Merci de confirmer ma commande!`
 
   const handleWhatsAppOrder = async () => {
     const msgText = buildWhatsAppMessage();
-    // Open WhatsApp immediately (within user gesture) to avoid popup blocker
-    window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
-    // Then save to database
-    await saveAllOrdersToDatabase("whatsapp");
+    // Open blank window immediately (user gesture = not blocked by popup blocker)
+    const whatsappWindow = window.open('', '_blank');
+    // Save to DB while browser is still in foreground
+    const saved = await saveAllOrdersToDatabase("whatsapp");
+    if (saved && whatsappWindow) {
+      whatsappWindow.location.href = `https://wa.me/50932836938?text=${msgText}`;
+    } else if (whatsappWindow) {
+      whatsappWindow.close();
+    }
   };
 
   const buildMonCashWhatsAppMessage = () => {
@@ -169,11 +180,16 @@ ${itemsList}
 
   const handleMonCashConfirm = async () => {
     const msgText = buildMonCashWhatsAppMessage();
-    // Open WhatsApp immediately (within user gesture) to avoid popup blocker
-    window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
+    // Open blank window immediately (user gesture = not blocked by popup blocker)
+    const whatsappWindow = window.open('', '_blank');
+    // Save to DB while browser is still in foreground
+    const saved = await saveAllOrdersToDatabase("moncash");
     setShowMonCashModal(false);
-    // Then save to database
-    await saveAllOrdersToDatabase("moncash");
+    if (saved && whatsappWindow) {
+      whatsappWindow.location.href = `https://wa.me/50932836938?text=${msgText}`;
+    } else if (whatsappWindow) {
+      whatsappWindow.close();
+    }
   };
 
   const handleRemoveItem = (item: typeof cartWithPricing[0]) => {
