@@ -11,12 +11,29 @@ const supabase = createClient(
   { auth: { detectSessionInUrl: false } }
 );
 
+const PLATFORM_BADGES: { [key: string]: { label: string; color: string; bg: string } } = {
+  aliexpress: { label: "AliExpress", color: "text-red-700", bg: "bg-red-50 border-red-200" },
+  shein: { label: "Shein", color: "text-black", bg: "bg-gray-100 border-gray-300" },
+  temu: { label: "Temu", color: "text-orange-700", bg: "bg-orange-50 border-orange-200" },
+  amazon: { label: "Amazon", color: "text-amber-800", bg: "bg-amber-50 border-amber-200" },
+  alibaba: { label: "Alibaba", color: "text-orange-800", bg: "bg-orange-50 border-orange-300" },
+  ebay: { label: "eBay", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
+  shop: { label: "Boutique", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+  other: { label: "Autre", color: "text-gray-700", bg: "bg-gray-50 border-gray-200" },
+};
+
 const ORDER_STATUS_CONFIG: { [key: string]: { label: string; color: string; icon: any; description: string } } = {
   awaiting_payment: {
     label: "En attente de paiement",
     color: "bg-yellow-100 text-yellow-800 border-yellow-300",
     icon: Clock,
     description: "Veuillez effectuer le paiement pour confirmer votre commande"
+  },
+  payment_confirmed: {
+    label: "Paiement confirmé",
+    color: "bg-lime-100 text-lime-800 border-lime-300",
+    icon: CheckCircle,
+    description: "Votre paiement a été confirmé, commande en cours de traitement"
   },
   processing: {
     label: "Commandé (Chine)",
@@ -107,7 +124,7 @@ export default function MyOrdersPage() {
         try {
           if (o.ali_item_id && o.ali_item_id.startsWith('{')) {
             const extra = JSON.parse(o.ali_item_id);
-            return { ...o, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes };
+            return { ...o, product_url: extra.product_url, product_image: extra.product_image, base_price: extra.base_price, service_fee: extra.service_fee, notes: extra.notes, platform: extra.platform || "aliexpress" };
           }
         } catch {}
         return o;
@@ -226,6 +243,9 @@ export default function MyOrdersPage() {
                   {/* Order Header */}
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-4 border-b border-blue-100 flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-4">
+                      {(() => { const pb = PLATFORM_BADGES[order.platform || "other"] || PLATFORM_BADGES.other; return (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border ${pb.bg} ${pb.color}`}>{pb.label}</span>
+                      ); })()}
                       <span className="text-sm text-gray-500">Commande du</span>
                       <span className="font-semibold text-gray-900">{new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
@@ -311,6 +331,7 @@ export default function MyOrdersPage() {
                             className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
                             style={{
                               width: order.order_status === 'awaiting_payment' ? '7%'
+                                : order.order_status === 'payment_confirmed' ? '14%'
                                 : order.order_status === 'processing' ? '21%'
                                 : order.order_status === 'shipped_to_usa' ? '36%'
                                 : order.order_status === 'arrived_miami' ? '50%'
