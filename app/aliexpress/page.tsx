@@ -69,6 +69,10 @@ function AliExpressContent() {
   const [orderNotes, setOrderNotes] = useState("");
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [addedToCart, setAddedToCart] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreResults, setHasMoreResults] = useState(false);
+  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
 
   const { addToCart } = useCart();
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -85,49 +89,14 @@ function AliExpressContent() {
     setSearchResults([]);
     setSelectedProduct(null);
     setHasSearched(true);
+    setCurrentPage(1);
+    setCurrentSearchTerm(searchTerm);
 
     try {
-      const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_search_2?q=${encodeURIComponent(searchTerm)}&page=1`, {
-        method: "GET",
-        headers: {
-          "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-          "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
-        },
-      });
-
-      const data = await response.json();
-      
-      if (data.message && data.message.includes("not subscribed")) {
-        setError("Erreur API. Veuillez réessayer plus tard.");
-        return;
-      }
-
-      if (!data.result?.resultList || data.result.resultList.length === 0) {
-        setError("Aucun produit trouvé. Essayez un autre mot-clé.");
-        return;
-      }
-
-      const products: SearchProduct[] = data.result.resultList.map((item: any) => {
-        const product = item.item;
-        let price = 0;
-        if (product.sku?.def?.promotionPrice) {
-          price = parseFloat(product.sku.def.promotionPrice);
-        } else if (product.sku?.def?.price) {
-          price = parseFloat(product.sku.def.price);
-        }
-        
-        return {
-          itemId: product.itemId,
-          title: product.title,
-          image: product.image?.startsWith("//") ? `https:${product.image}` : product.image,
-          price: price,
-          originalPrice: product.sku?.def?.price ? parseFloat(product.sku.def.price) : undefined,
-          sales: product.sales,
-          url: `https://www.aliexpress.com/item/${product.itemId}.html`
-        };
-      });
-
+      const products = await fetchAliExpressPage(searchTerm, 1);
+      if (products === null) return;
       setSearchResults(products);
+      setHasMoreResults(products.length >= 10);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
       console.error("API Error:", err);
@@ -135,6 +104,67 @@ function AliExpressContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Shared fetch function for a single page
+  const fetchAliExpressPage = async (searchTerm: string, page: number): Promise<SearchProduct[] | null> => {
+    const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_search_2?q=${encodeURIComponent(searchTerm)}&page=${page}`, {
+      method: "GET",
+      headers: {
+        "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
+        "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
+      },
+    });
+
+    const data = await response.json();
+    
+    if (data.message && data.message.includes("not subscribed")) {
+      setError("Erreur API. Veuillez réessayer plus tard.");
+      return null;
+    }
+
+    if (!data.result?.resultList || data.result.resultList.length === 0) {
+      if (page === 1) setError("Aucun produit trouvé. Essayez un autre mot-clé.");
+      return [];
+    }
+
+    return data.result.resultList.map((item: any) => {
+      const product = item.item;
+      let price = 0;
+      if (product.sku?.def?.promotionPrice) {
+        price = parseFloat(product.sku.def.promotionPrice);
+      } else if (product.sku?.def?.price) {
+        price = parseFloat(product.sku.def.price);
+      }
+      
+      return {
+        itemId: product.itemId,
+        title: product.title,
+        image: product.image?.startsWith("//") ? `https:${product.image}` : product.image,
+        price: price,
+        originalPrice: product.sku?.def?.price ? parseFloat(product.sku.def.price) : undefined,
+        sales: product.sales,
+        url: `https://www.aliexpress.com/item/${product.itemId}.html`
+      };
+    });
+  };
+
+  // Load more results
+  const handleLoadMore = async () => {
+    if (!currentSearchTerm || loadingMore) return;
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    try {
+      const products = await fetchAliExpressPage(currentSearchTerm, nextPage);
+      if (products && products.length > 0) {
+        setSearchResults(prev => [...prev, ...products]);
+        setCurrentPage(nextPage);
+        setHasMoreResults(products.length >= 10);
+      } else {
+        setHasMoreResults(false);
+      }
+    } catch {}
+    setLoadingMore(false);
   };
 
   // Search products by keyword
@@ -150,49 +180,14 @@ function AliExpressContent() {
     setSearchResults([]);
     setSelectedProduct(null);
     setHasSearched(true);
+    setCurrentPage(1);
+    setCurrentSearchTerm(searchTerm);
 
     try {
-      const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_search_2?q=${encodeURIComponent(searchTerm)}&page=1`, {
-        method: "GET",
-        headers: {
-          "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-          "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
-        },
-      });
-
-      const data = await response.json();
-      
-      if (data.message && data.message.includes("not subscribed")) {
-        setError("Erreur API. Veuillez vous abonner au plan sur RapidAPI.");
-        return;
-      }
-
-      if (!data.result?.resultList || data.result.resultList.length === 0) {
-        setError("Aucun produit trouvé. Essayez un autre mot-clé.");
-        return;
-      }
-
-      const products: SearchProduct[] = data.result.resultList.map((item: any) => {
-        const product = item.item;
-        let price = 0;
-        if (product.sku?.def?.promotionPrice) {
-          price = parseFloat(product.sku.def.promotionPrice);
-        } else if (product.sku?.def?.price) {
-          price = parseFloat(product.sku.def.price);
-        }
-        
-        return {
-          itemId: product.itemId,
-          title: product.title,
-          image: product.image?.startsWith("//") ? `https:${product.image}` : product.image,
-          price: price,
-          originalPrice: product.sku?.def?.price ? parseFloat(product.sku.def.price) : undefined,
-          sales: product.sales,
-          url: `https://www.aliexpress.com/item/${product.itemId}.html`
-        };
-      });
-
+      const products = await fetchAliExpressPage(searchTerm, 1);
+      if (products === null) return;
       setSearchResults(products);
+      setHasMoreResults(products.length >= 10);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
       console.error("API Error:", err);
@@ -589,6 +584,28 @@ function AliExpressContent() {
                   );
                 })}
               </div>
+
+              {/* Load More Button */}
+              {hasMoreResults && (
+                <div className="text-center mt-10">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="px-10 py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg shadow-lg hover:from-orange-600 hover:to-red-600 transition-all transform hover:scale-105 disabled:opacity-50 inline-flex items-center gap-3"
+                  >
+                    {loadingMore ? (
+                      <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Chargement...</>
+                    ) : (
+                      <><Package size={20} /> Voir plus de produits</>  
+                    )}
+                  </button>
+                  <p className="text-sm text-gray-500 mt-2">{searchResults.length} produits affichés</p>
+                </div>
+              )}
+
+              {!hasMoreResults && searchResults.length > 0 && (
+                <p className="text-center text-sm text-gray-400 mt-8">{searchResults.length} produits trouvés</p>
+              )}
             </>
           )}
 

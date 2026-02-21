@@ -1,16 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { ShoppingCart, MessageCircle, Search, Sparkles } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import { useCart } from '../context/CartContext';
 
 export default function Produits() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [aliExpressResults, setAliExpressResults] = useState<any[]>([]);
-  const [loadingAliExpress, setLoadingAliExpress] = useState(false);
-  const [errorAliExpress, setErrorAliExpress] = useState("");
   const [allProducts, setAllProducts] = useState<any[]>([]);
 
   // Fetch products from DB
@@ -18,37 +14,6 @@ export default function Produits() {
     fetch("/api/products").then(r => r.json()).then(d => setAllProducts(d.products || [])).catch(() => {});
   }, []);
 
-  // Recherche initiale depuis l'URL (query param)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const search = params.get('search');
-      if (search) setSearchQuery(search);
-    }
-  }, []);
-
-  // Recherche AliExpress si searchQuery présent
-  useEffect(() => {
-    if (searchQuery) {
-      setLoadingAliExpress(true);
-      setErrorAliExpress("");
-      fetch(`https://ali-express1.p.rapidapi.com/search?query=${encodeURIComponent(searchQuery)}`, {
-        method: "GET",
-        headers: {
-          "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-          "X-RapidAPI-Host": "ali-express1.p.rapidapi.com",
-        } as HeadersInit,
-      })
-        .then(res => res.json())
-        .then(data => {
-          setAliExpressResults(data.docs || []);
-        })
-        .catch(() => setErrorAliExpress("Erreur lors de la recherche AliExpress."))
-        .finally(() => setLoadingAliExpress(false));
-    } else {
-      setAliExpressResults([]);
-    }
-  }, [searchQuery]);
   const [productQuantities, setProductQuantities] = useState<{[key: number]: number}>({});
   
   // 1. ON PLACE LE HOOK ICI (à l'intérieur de la fonction)
@@ -120,27 +85,7 @@ export default function Produits() {
               </div>
             </div>
           </div>
-          {loadingAliExpress && (<div className="text-center text-blue-600 font-bold mt-8">Recherche AliExpress en cours...</div>)}
-          {errorAliExpress && (<div className="text-center text-red-600 font-bold mt-8">{errorAliExpress}</div>)}
-          {aliExpressResults.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-              {aliExpressResults.map((item, idx) => (
-                <div key={idx} className="premium-card rounded-2xl overflow-hidden flex flex-col group">
-                  <div className="relative h-48 sm:h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    <img src={item.product_main_image_url} alt={item.product_title} className="object-contain w-full h-full" />
-                  </div>
-                  <div className="p-4 flex flex-col flex-grow bg-white">
-                    <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors text-center">
-                      {item.product_title}
-                    </h3>
-                    <div className="mb-2 text-center text-purple-700 font-semibold">{item.app_sale_price} $</div>
-                    <a href={item.product_detail_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm mb-2 text-center">Voir sur AliExpress</a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {aliExpressResults.length === 0 && filteredProducts.length > 0 && (
+          {filteredProducts.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product, index) => (
                 <div
@@ -231,8 +176,13 @@ export default function Produits() {
               ))}
             </div>
           )}
-          {aliExpressResults.length === 0 && filteredProducts.length === 0 && (
-            <div className="text-center text-gray-500 text-lg mt-12">Aucun produit trouvé.</div>
+          {filteredProducts.length === 0 && (
+            <div className="text-center text-gray-500 text-lg mt-12">
+              <p>Aucun produit trouvé.</p>
+              <a href="/aliexpress" className="inline-block mt-4 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:from-orange-600 hover:to-red-600 transition">
+                Rechercher sur AliExpress
+              </a>
+            </div>
           )}
         </div>
       </section>
