@@ -350,6 +350,9 @@ ${itemsList}
                   <span>Frais de service</span>
                   <span>${grandFee.toFixed(2)}</span>
                 </div>
+                {cart.some(i => i.source === 'shop') && (
+                  <p className="text-xs text-green-600 font-medium">* Les produits en stock (Boutique) sont sans frais de service</p>
+                )}
                 <div className="border-t border-gray-100 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">Total USD</span>
                   <span className="font-extrabold text-lg text-purple-700">${grandTotal.toFixed(2)}</span>

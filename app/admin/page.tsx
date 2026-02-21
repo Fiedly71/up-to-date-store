@@ -6,7 +6,7 @@ import {
   Package, Users, Settings, Shield, ShieldOff, RefreshCw, Search, ChevronDown,
   DollarSign, Calendar, TrendingUp, Eye, MapPin, Phone, Mail, User, BarChart3,
   UserPlus, Trash2, X, Lock, Plus, Globe, ShoppingCart, Link as LinkIcon, Image as ImageIcon,
-  Tag, Edit3, Check
+  Tag, Edit3, Check, Upload
 } from "lucide-react";
 
 const supabase = createClient(
@@ -105,6 +105,7 @@ export default function AdminPanel() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [productForm, setProductForm] = useState({ name: "", description: "", price: "", image_url: "", category: "", in_stock: true });
   const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [productError, setProductError] = useState("");
   const [productSuccess, setProductSuccess] = useState("");
   const [searchProducts, setSearchProducts] = useState("");
