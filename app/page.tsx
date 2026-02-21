@@ -93,13 +93,8 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Navbar />
       {/* Qui sommes-nous */}
-      <section className="pt-8 pb-12 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <section className="pt-8 pb-12 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10 animate-fadeInUp">
             <h2 className="text-4xl sm:text-6xl font-extrabold mb-6">
               <span className="gradient-text">Qui sommes-nous</span>
@@ -116,7 +111,7 @@ export default function Home() {
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
                   href="/auth"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all"
                 >
                   <LogIn size={22} />
                   Se connecter
@@ -167,7 +162,7 @@ export default function Home() {
               return (
                 <div
                   key={service.id}
-                  className="premium-card rounded-2xl p-8 text-center group hover:scale-105 transition-all duration-300"
+                  className="premium-card rounded-2xl p-8 text-center group hover:shadow-xl transition-shadow"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex justify-center mb-6">
@@ -190,14 +185,7 @@ export default function Home() {
 
       {/* AliExpress Search - PREMIUM SECTION */}
       <section className="relative w-full py-20 px-4 overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-10 left-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-            <div className="absolute top-40 right-10 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute bottom-10 left-1/2 w-72 h-72 bg-red-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-          </div>
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-600"></div>
         
         <div className="relative z-10 max-w-5xl mx-auto">
           {/* Header */}
@@ -215,7 +203,7 @@ export default function Home() {
           </div>
 
           {/* Search Box */}
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
+          <div className="bg-white/15 rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
             <form onSubmit={handleSearch} className="flex flex-col gap-4">
               <div className="relative">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
@@ -244,7 +232,7 @@ export default function Home() {
 
               <button
                 type="submit"
-                className="w-full md:w-auto md:mx-auto px-12 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-bold text-lg shadow-xl hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 flex items-center justify-center gap-3"
+                className="w-full md:w-auto md:mx-auto px-12 py-4 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-bold text-lg shadow-xl hover:from-yellow-500 hover:to-orange-600 transition-all flex items-center justify-center gap-3"
               >
                 <Search size={22} />
                 Rechercher sur AliExpress
@@ -255,7 +243,7 @@ export default function Home() {
 
           {/* Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+            <div className="flex items-center gap-4 bg-white/15 rounded-2xl p-5 border border-white/20">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                 <ShoppingCart className="text-white" size={24} />
               </div>
@@ -264,7 +252,7 @@ export default function Home() {
                 <p className="text-white/70 text-sm">MonCash, Cash, Carte</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+            <div className="flex items-center gap-4 bg-white/15 rounded-2xl p-5 border border-white/20">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                 <Truck className="text-white" size={24} />
               </div>
@@ -273,7 +261,7 @@ export default function Home() {
                 <p className="text-white/70 text-sm">7-15 jours à Champin</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
+            <div className="flex items-center gap-4 bg-white/15 rounded-2xl p-5 border border-white/20">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                 <Headphones className="text-white" size={24} />
               </div>
@@ -297,108 +285,72 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Nos produits - 4 max */}
-      <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-slate-50">
+      {/* Nos produits - Compact Grid */}
+      <section className="py-12 sm:py-16 bg-gradient-to-b from-white to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <ShoppingCart className="text-white" size={28} />
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <ShoppingCart className="text-white" size={24} />
               </div>
-              <h2 className="text-4xl sm:text-5xl font-extrabold">
+              <h2 className="text-3xl sm:text-4xl font-extrabold">
                 <span className="gradient-text">Nos Produits</span>
               </h2>
             </div>
-            <p className="text-lg text-gray-600">
-              Découvrez nos meilleures sélections en stock à Cap-Haïtien
-            </p>
+            <p className="text-gray-600">En stock à Cap-Haïtien</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {allProducts.slice(0, 4).map((product, index) => (
-              <div
-                key={index}
-                className="premium-card rounded-2xl overflow-hidden flex flex-col group relative"
-              >
-                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
+              <div key={index} className="premium-card rounded-xl overflow-hidden flex flex-col group relative aspect-square">
+                <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                   En stock
                 </div>
-                <div className="relative h-40 sm:h-44 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                <div className="relative h-1/2 bg-gray-100 overflow-hidden">
                   {product.image && (
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
-                    />
+                    <img src={product.image} alt={product.name} loading="lazy"
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
                   )}
                 </div>
-                <div className="p-4 flex flex-col flex-grow bg-white">
-                  <h3 className="text-md font-bold text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
+                <div className="p-3 flex flex-col flex-grow bg-white justify-between">
+                  <h3 className="text-sm font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
                     {product.name}
                   </h3>
-                  <div className="mb-4">
-                    <label className="block text-xs font-semibold text-gray-600 mb-2">Quantité</label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
-                        onClick={() => {
-                          const current = productQuantities[product.id] || 0;
-                          const next = Math.max(0, current - 1);
-                          setProductQuantities({ ...productQuantities, [product.id]: next });
-                        }}
-                      >
-                        -
-                      </button>
-                      <div className="px-4 py-2 border border-gray-300 rounded-lg min-w-12 text-center font-semibold text-gray-900">
-                        {productQuantities[product.id] || 0}
-                      </div>
-                      <button
-                        type="button"
-                        className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100"
-                        onClick={() => {
-                          const current = productQuantities[product.id] || 0;
-                          const next = Math.min(99, current + 1);
-                          setProductQuantities({ ...productQuantities, [product.id]: next });
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-auto flex flex-col gap-2 w-full">
-                    <button
+                  <div className="flex items-center gap-1 mb-2">
+                    <button type="button"
+                      className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100 text-sm"
                       onClick={() => {
-                        const quantity = productQuantities[product.id] || 0;
-                        if (quantity <= 0) return;
-                        removeFromCart(product.id);
-                        addToCart(product, quantity);
-                      }}
-                      disabled={productQuantities[product.id] === 0}
-                      className={`premium-button bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-md w-full ${productQuantities[product.id] === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'}`}
-                    >
-                      <ShoppingCart size={16} />
-                      <span>Ajouter au panier</span>
-                    </button>
-                    {productQuantities[product.id] > 0 && (
-                      <button
-                        onClick={() => {
-                          removeFromCart(product.id);
-                          setProductQuantities({ ...productQuantities, [product.id]: 0 });
-                        }}
-                        className="px-2 py-2 rounded-xl border-2 border-red-600 text-red-600 font-semibold text-xs hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center gap-1 self-stretch"
-                      >
-                        Supprimer
-                      </button>
-                    )}
+                        const current = productQuantities[product.id] || 0;
+                        setProductQuantities({ ...productQuantities, [product.id]: Math.max(0, current - 1) });
+                      }}>-</button>
+                    <span className="px-2 font-semibold text-gray-900 text-sm min-w-[24px] text-center">
+                      {productQuantities[product.id] || 0}
+                    </span>
+                    <button type="button"
+                      className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center text-gray-700 hover:bg-gray-100 text-sm"
+                      onClick={() => {
+                        const current = productQuantities[product.id] || 0;
+                        setProductQuantities({ ...productQuantities, [product.id]: Math.min(99, current + 1) });
+                      }}>+</button>
                   </div>
+                  <button
+                    onClick={() => {
+                      const quantity = productQuantities[product.id] || 0;
+                      if (quantity <= 0) return;
+                      removeFromCart(product.id);
+                      addToCart(product, quantity);
+                    }}
+                    disabled={!productQuantities[product.id]}
+                    className={`w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center gap-1 ${!productQuantities[product.id] ? 'opacity-40 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'}`}
+                  >
+                    <ShoppingCart size={14} /> Ajouter
+                  </button>
                 </div>
               </div>
             ))}
           </div>
           <div className="text-center">
-            <Link
-              href="/produits"
-              className="premium-button inline-block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-105"
+            <Link href="/produits"
+              className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg"
             >
               Voir tous les produits
             </Link>

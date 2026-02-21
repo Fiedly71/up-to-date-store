@@ -221,7 +221,7 @@ export default function MyOrdersPage() {
 
                   {/* Order Content */}
                   <div className="p-6">
-                    <div className="flex items-start gap-4 mb-6">
+                    <div className="flex items-start gap-4 mb-4">
                       {order.product_image && (
                         <img
                           src={order.product_image}
@@ -229,13 +229,19 @@ export default function MyOrdersPage() {
                           className="w-20 h-20 object-contain rounded-xl bg-gray-100"
                         />
                       )}
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2">{order.product_name}</h3>
-                        <p className="text-gray-600 text-sm">{statusConfig.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-2">{order.product_name}</h3>
+                        <p className="text-gray-600 text-sm mb-2">{statusConfig.description}</p>
+                        {order.notes && <p className="text-xs text-gray-500 truncate">📝 {order.notes}</p>}
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-purple-700">${order.total_price_with_fees}</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-2xl font-bold text-purple-700">${Number(order.total_price_with_fees || 0).toFixed(2)}</p>
                         <p className="text-xs text-gray-500">Total avec frais</p>
+                        {order.base_price > 0 && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            ${Number(order.base_price).toFixed(2)} + ${Number(order.service_fee || 0).toFixed(2)} frais
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -283,15 +289,15 @@ export default function MyOrdersPage() {
                     )}
 
                     {/* Progress bar for visual tracking */}
-                    {order.order_status !== 'cancelled' && (
+                    {order.order_status !== 'cancelled' && order.order_status !== 'payment_issue' && (
                       <div className="mt-6">
                         <div className="flex justify-between text-xs text-gray-500 mb-2">
                           <span>Paiement</span>
-                          <span>Traitement</span>
-                          <span>→ Miami</span>
+                          <span>Chine</span>
+                          <span>→ USA</span>
                           <span>Miami</span>
-                          <span>→ Haïti</span>
-                          <span>Haïti</span>
+                          <span>→ RD</span>
+                          <span>Champin</span>
                           <span>Livré</span>
                         </div>
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -300,10 +306,10 @@ export default function MyOrdersPage() {
                             style={{
                               width: order.order_status === 'awaiting_payment' ? '7%'
                                 : order.order_status === 'processing' ? '21%'
-                                : order.order_status === 'shipped_to_miami' ? '36%'
+                                : order.order_status === 'shipped_to_usa' ? '36%'
                                 : order.order_status === 'arrived_miami' ? '50%'
-                                : order.order_status === 'shipped_to_haiti' ? '64%'
-                                : order.order_status === 'arrived_haiti' ? '79%'
+                                : order.order_status === 'shipped_to_dr' ? '64%'
+                                : order.order_status === 'available_champin' ? '79%'
                                 : order.order_status === 'delivered' ? '100%'
                                 : '0%'
                             }}
