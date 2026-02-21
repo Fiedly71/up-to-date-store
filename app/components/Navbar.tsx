@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageCircle, Menu, X, ShoppingCart, Shield } from "lucide-react";
+import { MessageCircle, Menu, X, ShoppingCart, Shield, User } from "lucide-react";
 import { useCart } from '../context/CartContext';
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
@@ -115,7 +115,10 @@ export default function Navbar(): React.ReactElement {
               {isAdmin ? (
                 <Link href="/admin" className="ml-2 px-4 py-2 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition flex items-center gap-1"><Shield size={16} />Dashboard</Link>
               ) : (
-                <Link href="/my-orders" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Mes commandes</Link>
+                <>
+                  <Link href="/my-orders" className="ml-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition">Mes commandes</Link>
+                  <Link href="/mes-infos" className="ml-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-1"><User size={16} />Mes Infos</Link>
+                </>
               )}
               <button
                 onClick={async () => {
@@ -216,7 +219,10 @@ export default function Navbar(): React.ReactElement {
               {isAdmin ? (
                 <Link href="/admin" className="block w-full text-center mt-2 px-4 py-3 bg-purple-700 text-white rounded-xl font-semibold hover:bg-purple-800 transition" onClick={() => setMobileMenuOpen(false)}>Dashboard Admin</Link>
               ) : (
-                <Link href="/my-orders" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition" onClick={() => setMobileMenuOpen(false)}>Mes commandes</Link>
+                <>
+                  <Link href="/my-orders" className="block w-full text-center mt-2 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition" onClick={() => setMobileMenuOpen(false)}>Mes commandes</Link>
+                  <Link href="/mes-infos" className="block w-full text-center mt-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition" onClick={() => setMobileMenuOpen(false)}>Mes Infos</Link>
+                </>
               )}
               <button
                 onClick={async () => {
