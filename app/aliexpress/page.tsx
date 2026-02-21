@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Link2, ShoppingCart, ExternalLink, Sparkles, Package, CheckCircle, AlertCircle, Star, Shield, Truck, Clock, ArrowRight, X, MessageCircle } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
@@ -71,6 +71,7 @@ function AliExpressContent() {
   const [addedToCart, setAddedToCart] = useState(false);
 
   const { addToCart } = useCart();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const popularSearches = ["iPhone case", "Écouteurs Bluetooth", "LED lights", "Smartwatch", "USB-C cable", "Power bank"];
 
@@ -127,6 +128,7 @@ function AliExpressContent() {
       });
 
       setSearchResults(products);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
       console.error("API Error:", err);
       setError("Erreur de connexion. Vérifiez votre connexion internet.");
@@ -191,6 +193,7 @@ function AliExpressContent() {
       });
 
       setSearchResults(products);
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
       console.error("API Error:", err);
       setError("Erreur de connexion. Vérifiez votre connexion internet.");
@@ -527,15 +530,10 @@ function AliExpressContent() {
           )}
 
           {/* Search Results Grid */}
+          <div ref={resultsRef} />
           {!loading && !loadingDetails && searchResults.length > 0 && !selectedProduct && (
             <>
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {searchResults.length} produits trouvés
-                </h2>
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div id="search-results" className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {searchResults.map((product, idx) => {
                   const priceInfo = calculateTotalPrice(product.price);
                   return (

@@ -45,7 +45,7 @@ export default function RootLayout({
 
           {/* Floating Instagram Button (site-wide) */}
           <a
-            href="https://instagram.com/"
+            href="https://instagram.com/uptodate.electronic"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Instagram"

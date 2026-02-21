@@ -223,14 +223,19 @@ export default function AdminPanel() {
     return d >= new Date(dateFrom) && d <= new Date(dateTo + "T23:59:59");
   });
 
+  const getOrderFee = (o: any) => {
+    const fee = parseFloat(o.service_fee || 0);
+    return isNaN(fee) ? 0 : fee;
+  };
+
   const getOrderPrice = (o: any) => {
     const p = parseFloat(o.total_price_with_fees || o.price || 0);
     return isNaN(p) ? 0 : p;
   };
 
-  const totalRevenue = allOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
-  const periodRevenue = revenueOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
-  const deliveredRevenue = revenueOrders.filter(o => o.order_status === "delivered").reduce((sum, o) => sum + getOrderPrice(o), 0);
+  const totalRevenue = allOrders.reduce((sum, o) => sum + getOrderFee(o), 0);
+  const periodRevenue = revenueOrders.reduce((sum, o) => sum + getOrderFee(o), 0);
+  const deliveredRevenue = revenueOrders.filter(o => o.order_status === "delivered").reduce((sum, o) => sum + getOrderFee(o), 0);
 
   const userOrderCounts: Record<string, number> = {};
   allOrders.forEach(o => {
@@ -314,7 +319,7 @@ export default function AdminPanel() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">${totalRevenue.toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">Revenus totaux</p>
+                    <p className="text-sm text-gray-500">Revenus (frais de service)</p>
                   </div>
                 </div>
               </div>
@@ -700,7 +705,7 @@ export default function AdminPanel() {
                       <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center"><DollarSign className="text-green-600" size={24} /></div>
                       <div>
                         <p className="text-2xl font-bold text-green-700">${periodRevenue.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">Revenus (période)</p>
+                        <p className="text-sm text-gray-500">Frais de service (période)</p>
                       </div>
                     </div>
                   </div>
@@ -709,7 +714,7 @@ export default function AdminPanel() {
                       <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center"><TrendingUp className="text-emerald-600" size={24} /></div>
                       <div>
                         <p className="text-2xl font-bold text-emerald-700">${deliveredRevenue.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">Livrés (période)</p>
+                        <p className="text-sm text-gray-500">Frais livrés (période)</p>
                       </div>
                     </div>
                   </div>
@@ -739,7 +744,7 @@ export default function AdminPanel() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     {ORDER_STATUSES.map(status => {
                       const count = revenueOrders.filter(o => o.order_status === status.value).length;
-                      const amount = revenueOrders.filter(o => o.order_status === status.value).reduce((s, o) => s + getOrderPrice(o), 0);
+                      const amount = revenueOrders.filter(o => o.order_status === status.value).reduce((s, o) => s + getOrderFee(o), 0);
                       return (
                         <div key={status.value} className={`rounded-xl p-4 border ${status.color}`}>
                           <p className="text-2xl font-bold">{count}</p>
@@ -778,7 +783,7 @@ export default function AdminPanel() {
                                 <td className="px-4 py-3 text-sm text-gray-900">{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
                                 <td className="px-4 py-3 text-sm text-gray-700">{order.user_email || "-"}</td>
                                 <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">{order.product_name || order.product_title || "-"}</td>
-                                <td className="px-4 py-3 text-sm font-bold text-green-700">${getOrderPrice(order).toFixed(2)}</td>
+                                <td className="px-4 py-3 text-sm font-bold text-green-700">${getOrderFee(order).toFixed(2)}</td>
                                 <td className="px-4 py-3"><span className={`px-2 py-1 rounded-lg text-xs font-semibold border ${statusInfo.color}`}>{statusInfo.label}</span></td>
                               </tr>
                             );

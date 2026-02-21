@@ -22,8 +22,8 @@ export function calculateFinalPrice(basePrice: number) {
     fee = 20;
     feeType = '$20 flat fee';
   } else {
-    fee = basePrice * 0.2;
-    feeType = '20% of price';
+    fee = 30;
+    feeType = '$30 flat fee';
   }
   return basePrice + fee;
 }
@@ -41,8 +41,8 @@ export function getPriceBreakdown(basePrice: number) {
     fee = 20;
     feeType = '$20 flat fee';
   } else {
-    fee = basePrice * 0.2;
-    feeType = '20% of price';
+    fee = 30;
+    feeType = '$30 flat fee';
   }
   return {
     base: basePrice,
