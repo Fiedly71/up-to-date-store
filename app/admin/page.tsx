@@ -458,18 +458,20 @@ export default function AdminPanel() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-lg w-fit">
-              {([
-                { key: "orders" as const, label: "Commandes", icon: Package, count: allOrders.length },
-                { key: "users" as const, label: "Clients", icon: Users, count: users.length },
-                { key: "products" as const, label: "Produits", icon: Tag, count: products.length },
-                { key: "revenue" as const, label: "Revenus", icon: BarChart3, count: undefined as number | undefined },
-              ]).map(tab => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition ${activeTab === tab.key ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-                  <tab.icon size={16} /> {tab.label} {tab.count !== undefined && <span className="text-xs opacity-60">({tab.count})</span>}
-                </button>
-              ))}
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5">
+              <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-max min-w-full sm:w-fit">
+                {([
+                  { key: "orders" as const, label: "Commandes", icon: Package, count: allOrders.length },
+                  { key: "users" as const, label: "Clients", icon: Users, count: users.length },
+                  { key: "products" as const, label: "Produits", icon: Tag, count: products.length },
+                  { key: "revenue" as const, label: "Revenus", icon: BarChart3, count: undefined as number | undefined },
+                ]).map(tab => (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-semibold transition whitespace-nowrap ${activeTab === tab.key ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                    <tab.icon size={16} /> {tab.label} {tab.count !== undefined && <span className="text-xs opacity-60">({tab.count})</span>}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* ============ ORDERS TAB ============ */}
@@ -867,10 +869,10 @@ export default function AdminPanel() {
               <section className="space-y-4">
                 {/* Product Form Modal */}
                 {showProductForm && (
-                  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowProductForm(false)}>
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center justify-between mb-5">
-                        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Tag size={20} className="text-purple-600" /> {editingProduct ? "Modifier le produit" : "Nouveau produit"}</h3>
+                  <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center" onClick={() => setShowProductForm(false)}>
+                    <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-5 sm:p-6 sm:m-4" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2"><Tag size={20} className="text-purple-600" /> {editingProduct ? "Modifier le produit" : "Nouveau produit"}</h3>
                         <button onClick={() => setShowProductForm(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
                       </div>
                       {productError && <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-2 text-sm mb-3">{productError}</div>}
@@ -878,20 +880,20 @@ export default function AdminPanel() {
                       <form onSubmit={handleSaveProduct} className="space-y-3">
                         <div>
                           <label className="block text-xs font-semibold text-gray-600 mb-1">Nom du produit *</label>
-                          <input required value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="Ex: Smart Watch Pro" />
+                          <input required value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900" placeholder="Ex: Smart Watch Pro" />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-600 mb-1">Description</label>
-                          <textarea rows={3} value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="Description détaillée du produit..." />
+                          <textarea rows={2} value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900" placeholder="Description du produit..." />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-1">Prix (USD)</label>
-                            <input type="number" step="0.01" min="0" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="0.00" />
+                            <input type="number" step="0.01" min="0" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900" placeholder="0.00" />
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-1">Catégorie</label>
-                            <select value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+                            <select value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900">
                               <option value="">-- Choisir --</option>
                               <option value="electronique">Électronique</option>
                               <option value="accessoires">Accessoires</option>
@@ -905,12 +907,36 @@ export default function AdminPanel() {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-1">URL de l&apos;image</label>
-                          <input value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="https://..." />
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Photo du produit</label>
+                          <label className={`flex items-center justify-center gap-2 w-full px-3 py-3 border-2 border-dashed border-purple-300 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <Upload size={18} className="text-purple-500" />
+                            <span className="text-sm text-purple-700 font-semibold">{uploadingImage ? 'Envoi en cours...' : '📷 Choisir une photo depuis la galerie'}</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setUploadingImage(true);
+                              setProductError("");
+                              try {
+                                const fd = new FormData();
+                                fd.append("file", file);
+                                fd.append("userId", currentUserId || "");
+                                const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error || "Erreur upload");
+                                setProductForm(f => ({ ...f, image_url: data.url }));
+                              } catch (err: any) { setProductError(err.message); }
+                              setUploadingImage(false);
+                            }} />
+                          </label>
+                          <p className="text-[11px] text-gray-400 mt-1">JPG, PNG, WebP ou GIF • Max 5 Mo</p>
+                          <div className="mt-2">
+                            <label className="block text-[11px] text-gray-400 mb-1">Ou collez un lien image :</label>
+                            <input value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900" placeholder="https://..." />
+                          </div>
                         </div>
                         {productForm.image_url && (
                           <div className="border border-gray-200 rounded-lg p-2 bg-gray-50">
-                            <img src={productForm.image_url} alt="Aperçu" className="max-h-40 mx-auto rounded object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
+                            <img src={productForm.image_url} alt="Aperçu" className="max-h-32 mx-auto rounded object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
                           </div>
                         )}
                         <div className="flex items-center gap-3">
@@ -919,7 +945,7 @@ export default function AdminPanel() {
                             <span className="text-sm text-gray-700 font-medium">En stock</span>
                           </label>
                         </div>
-                        <button type="submit" disabled={savingProduct} className="w-full py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm hover:bg-purple-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                        <button type="submit" disabled={savingProduct || uploadingImage} className="w-full py-3 bg-purple-600 text-white rounded-lg font-semibold text-sm hover:bg-purple-700 disabled:opacity-50 transition flex items-center justify-center gap-2">
                           {savingProduct ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Enregistrement...</> : <><Check size={16} /> {editingProduct ? "Mettre à jour" : "Créer le produit"}</>}
                         </button>
                       </form>
