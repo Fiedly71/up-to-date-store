@@ -37,21 +37,19 @@ export default function PanierPage() {
 
   const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
-  const isShopItem = (item: typeof cart[0]) => item.source === 'shop';
+  const isShopItem = (item: { source?: string }) => item.source === 'shop';
 
   const cartWithPricing = cart.map(item => {
     const qty = item.quantity || 1;
     const baseTotal = (item.price || 0) * qty;
-    // No fees for in-stock shop products
-    const breakdown = isShopItem(item)
-      ? { base: baseTotal, fee: 0, feeType: 'En stock', total: baseTotal }
-      : getPriceBreakdown(baseTotal);
-    return { ...item, qty, baseTotal, breakdown };
+    return { ...item, qty, baseTotal };
   });
 
+  // Fee is calculated ONCE on the combined total of all import (non-shop) items
+  const importSubtotal = cartWithPricing.filter(item => !isShopItem(item)).reduce((sum, item) => sum + item.baseTotal, 0);
   const grandBaseTotal = cartWithPricing.reduce((sum, item) => sum + item.baseTotal, 0);
-  const grandFee = cartWithPricing.reduce((sum, item) => sum + item.breakdown.fee, 0);
-  const grandTotal = cartWithPricing.reduce((sum, item) => sum + item.breakdown.total, 0);
+  const grandFee = importSubtotal > 0 ? getPriceBreakdown(importSubtotal).fee : 0;
+  const grandTotal = grandBaseTotal + grandFee;
 
   const saveAllOrdersToDatabase = async (paymentMethod: string) => {
     if (!user || cart.length === 0) return false;
@@ -70,8 +68,8 @@ export default function PanierPage() {
             productUrl: item.url || "",
             productImage: item.image || "",
             basePrice: item.baseTotal,
-            serviceFee: item.breakdown.fee,
-            totalWithFees: item.breakdown.total,
+            serviceFee: (!isShopItem(item) && importSubtotal > 0) ? Math.round((item.baseTotal / importSubtotal) * grandFee * 100) / 100 : 0,
+            totalWithFees: item.baseTotal + ((!isShopItem(item) && importSubtotal > 0) ? Math.round((item.baseTotal / importSubtotal) * grandFee * 100) / 100 : 0),
             notes: [
               item.source ? `Source: ${item.source}` : "",
               item.color ? `Couleur: ${item.color}` : "",
@@ -107,11 +105,7 @@ export default function PanierPage() {
       if (item.size) lines.push(`   Taille: ${item.size}`);
       if (item.notes) lines.push(`   Notes: ${item.notes}`);
       if (item.source) lines.push(`   Source: ${item.source}`);
-      if (item.breakdown.fee > 0) {
-        lines.push(`   Prix: $${item.baseTotal.toFixed(2)} + $${item.breakdown.fee.toFixed(2)} frais = *$${item.breakdown.total.toFixed(2)}*`);
-      } else {
-        lines.push(`   Prix: *$${item.baseTotal.toFixed(2)}* (en stock)`);
-      }
+      lines.push(`   Prix: *$${item.baseTotal.toFixed(2)}*${isShopItem(item) ? ' (en stock)' : ''}`);
       if (item.url) lines.push(`   Lien: ${item.url}`);
       if (item.image && item.image.startsWith('http')) lines.push(`   Image: ${item.image}`);
       return lines.join('\n');
@@ -138,10 +132,10 @@ Merci de confirmer ma commande!`
 
   const handleWhatsAppOrder = async () => {
     const msgText = buildWhatsAppMessage();
-    const saved = await saveAllOrdersToDatabase("whatsapp");
-    if (saved) {
-      window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
-    }
+    // Open WhatsApp immediately (within user gesture) to avoid popup blocker
+    window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
+    // Then save to database
+    await saveAllOrdersToDatabase("whatsapp");
   };
 
   const buildMonCashWhatsAppMessage = () => {
@@ -151,7 +145,7 @@ Merci de confirmer ma commande!`
       if (item.size) lines.push(`   Taille: ${item.size}`);
       if (item.url) lines.push(`   Lien: ${item.url}`);
       if (item.image && item.image.startsWith('http')) lines.push(`   Image: ${item.image}`);
-      lines.push(`   Prix: $${item.breakdown.total.toFixed(2)}`);
+      lines.push(`   Prix: $${item.baseTotal.toFixed(2)}`);
       return lines.join('\n');
     }).join('\n\n');
 
@@ -175,11 +169,11 @@ ${itemsList}
 
   const handleMonCashConfirm = async () => {
     const msgText = buildMonCashWhatsAppMessage();
-    const saved = await saveAllOrdersToDatabase("moncash");
-    if (saved) {
-      window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
-      setShowMonCashModal(false);
-    }
+    // Open WhatsApp immediately (within user gesture) to avoid popup blocker
+    window.open(`https://wa.me/50932836938?text=${msgText}`, '_blank');
+    setShowMonCashModal(false);
+    // Then save to database
+    await saveAllOrdersToDatabase("moncash");
   };
 
   const handleRemoveItem = (item: typeof cartWithPricing[0]) => {
@@ -292,12 +286,11 @@ ${itemsList}
                         <div className="text-right">
                           {item.price ? (
                             <>
-                              <p className="font-bold text-purple-700 text-sm sm:text-base">${item.breakdown.total.toFixed(2)}</p>
-                              {isShopItem(item) ? (
-                                <p className="text-[11px] text-green-600">${item.price.toFixed(2)} × {item.qty} (en stock)</p>
-                              ) : (
-                                <p className="text-[11px] text-gray-400">${item.price.toFixed(2)} × {item.qty} + ${item.breakdown.fee.toFixed(2)} frais</p>
-                              )}
+                              <p className="font-bold text-purple-700 text-sm sm:text-base">${item.baseTotal.toFixed(2)}</p>
+                              <p className="text-[11px] text-gray-400">
+                                ${item.price.toFixed(2)} × {item.qty}
+                                {isShopItem(item) && <span className="text-green-600 ml-1">(en stock)</span>}
+                              </p>
                             </>
                           ) : (
                             <p className="text-sm text-gray-400">Prix sur devis</p>
