@@ -31,20 +31,45 @@ export default function AuthPage() {
   const isManualLogin = useRef(false);
   // Store recovery/invite tokens so session is NOT kept in localStorage
   const savedTokens = useRef<{ access_token: string; refresh_token: string } | null>(null);
+  // Store our custom non-expiring token
+  const customToken = useRef<string | null>(null);
 
   // Handle email confirmation, password reset, and invitation callback
   useEffect(() => {
-    // Check URL hash SYNCHRONOUSLY before Supabase auto-processes it
+    // 1. Check for our custom non-expiring token in URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenParam = urlParams.get('token');
+    const typeParam = urlParams.get('type');
+
+    if (tokenParam && (typeParam === 'recovery' || typeParam === 'invite')) {
+      customToken.current = tokenParam;
+      isManualLogin.current = true;
+      setAuthMode('reset');
+      setSuccess(
+        typeParam === 'invite'
+          ? "Bienvenue ! Créez votre mot de passe pour activer votre compte."
+          : "Entrez votre nouveau mot de passe."
+      );
+      window.history.replaceState(null, '', '/auth');
+      return;
+    }
+
+    if (urlParams.get('confirmed') === 'true') {
+      setEmailConfirmed(true);
+      setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
+      setAuthMode('login');
+    }
+
+    // 2. Check URL hash for Supabase's built-in tokens (fallback)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const hashType = hashParams.get('type');
     if (hashType === 'recovery' || hashType === 'invite') {
       isManualLogin.current = true;
     }
 
-    // Listen for Supabase auth events
+    // Listen for Supabase auth events (fallback for Supabase's own links)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY' && session) {
-        // Save tokens in memory — DO NOT sign out, keep session alive for password update
         savedTokens.current = {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
@@ -58,7 +83,6 @@ export default function AuthPage() {
 
       if (event === 'SIGNED_IN' && session) {
         if (hashType === 'invite') {
-          // Save tokens in memory — DO NOT sign out, keep session alive
           savedTokens.current = {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
@@ -71,25 +95,14 @@ export default function AuthPage() {
         }
 
         if (hashType === 'signup') {
-          // Email confirmation
           setEmailConfirmed(true);
           setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
           setAuthMode('login');
           window.history.replaceState(null, '', '/auth');
           return;
         }
-
-        // Normal sign-in — don't auto-redirect (manual login handles it)
       }
     });
-
-    // Also check URL query params
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('confirmed') === 'true') {
-      setEmailConfirmed(true);
-      setSuccess("✅ Email confirmé avec succès ! Vous pouvez maintenant vous connecter.");
-      setAuthMode('login');
-    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -106,7 +119,7 @@ export default function AuthPage() {
     return null;
   }
 
-  // Handle forgot password
+  // Handle forgot password — uses custom non-expiring token system
   async function handleForgotPassword(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -118,12 +131,14 @@ export default function AuthPage() {
         throw new Error("Veuillez entrer une adresse email valide.");
       }
 
-      const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl}/auth`,
+      const res = await fetch("/api/auth/request-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur serveur.");
 
       setSuccess("✅ Un email de réinitialisation a été envoyé ! Vérifiez votre boîte mail.");
       setEmail("");
@@ -149,24 +164,46 @@ export default function AuthPage() {
         throw new Error("Les mots de passe ne correspondent pas.");
       }
 
+      // If we have a custom non-expiring token, use our server-side API
+      if (customToken.current) {
+        const res = await fetch("/api/auth/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: customToken.current, newPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur serveur.");
+
+        customToken.current = null;
+        await supabase.auth.signOut();
+        isManualLogin.current = false;
+
+        setSuccess("✅ Mot de passe créé avec succès ! Connectez-vous avec votre email et votre nouveau mot de passe.");
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setTimeout(() => {
+          setAuthMode('login');
+          setSuccess("Votre mot de passe a été défini. Connectez-vous maintenant.");
+        }, 2000);
+        return;
+      }
+
+      // Fallback: use Supabase session tokens (from Supabase's own email links)
       if (!savedTokens.current) {
         throw new Error("Session expirée. Veuillez demander un nouveau lien de réinitialisation.");
       }
 
-      // Update the password (session is already active from recovery/invite flow)
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) {
-        // If session expired, try restoring it first
         const { error: sessionError } = await supabase.auth.setSession(savedTokens.current);
         if (sessionError) throw new Error("Session expirée. Veuillez demander un nouveau lien.");
         const { error: retryError } = await supabase.auth.updateUser({ password: newPassword });
         if (retryError) throw retryError;
       }
 
-      // Sign out completely so user must log in with new password
       savedTokens.current = null;
       await supabase.auth.signOut();
       isManualLogin.current = false;
@@ -310,6 +347,7 @@ export default function AuthPage() {
               type="button"
               onClick={() => {
                 savedTokens.current = null;
+                customToken.current = null;
                 setAuthMode('login'); setError(""); setSuccess("");
               }}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-medium"

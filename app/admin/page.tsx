@@ -46,6 +46,8 @@ export default function AdminPanel() {
   const [creatingUser, setCreatingUser] = useState(false);
   const [createUserError, setCreateUserError] = useState("");
   const [createUserSuccess, setCreateUserSuccess] = useState("");
+  const [inviteMode, setInviteMode] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
 
   // Delete user confirmation
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -147,18 +149,35 @@ export default function AdminPanel() {
     setCreatingUser(true);
     setCreateUserError("");
     setCreateUserSuccess("");
+    setInviteLink("");
     try {
-      const res = await fetch("/api/admin/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUserId, ...newUserForm }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur lors de la création");
-      setUsers(prev => [data.user, ...prev]);
-      setCreateUserSuccess(`Utilisateur ${data.user.email} créé avec succès !`);
-      setNewUserForm({ email: "", password: "", firstName: "", lastName: "", phone: "", city: "", address: "", makeAdmin: false });
-      setTimeout(() => { setShowCreateUser(false); setCreateUserSuccess(""); }, 1500);
+      if (inviteMode) {
+        // Invitation mode: create user + generate non-expiring invite link
+        const res = await fetch("/api/auth/invite-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: currentUserId, ...newUserForm }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur lors de l'invitation");
+        setUsers(prev => [data.user, ...prev]);
+        setInviteLink(data.inviteLink);
+        setCreateUserSuccess(`Utilisateur ${data.user.email} créé ! Copiez le lien d'invitation ci-dessous.`);
+        setNewUserForm({ email: "", password: "", firstName: "", lastName: "", phone: "", city: "", address: "", makeAdmin: false });
+      } else {
+        // Direct creation with password
+        const res = await fetch("/api/admin/create-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: currentUserId, ...newUserForm }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur lors de la création");
+        setUsers(prev => [data.user, ...prev]);
+        setCreateUserSuccess(`Utilisateur ${data.user.email} créé avec succès !`);
+        setNewUserForm({ email: "", password: "", firstName: "", lastName: "", phone: "", city: "", address: "", makeAdmin: false });
+        setTimeout(() => { setShowCreateUser(false); setCreateUserSuccess(""); }, 1500);
+      }
     } catch (err: any) {
       setCreateUserError(err.message);
     }
@@ -443,6 +462,17 @@ export default function AdminPanel() {
                         <button onClick={() => setShowCreateUser(false)} className="p-2 hover:bg-gray-100 rounded-lg"><X size={20} /></button>
                       </div>
                       <form onSubmit={handleCreateUser} className="space-y-4">
+                        {/* Mode toggle: Direct / Invitation */}
+                        <div className="flex bg-gray-100 rounded-xl p-1 mb-2">
+                          <button type="button" onClick={() => setInviteMode(false)}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${!inviteMode ? 'bg-white shadow text-purple-700' : 'text-gray-500'}`}>
+                            Création directe
+                          </button>
+                          <button type="button" onClick={() => setInviteMode(true)}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${inviteMode ? 'bg-white shadow text-purple-700' : 'text-gray-500'}`}>
+                            Invitation (lien)
+                          </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Prénom</label>
@@ -463,14 +493,16 @@ export default function AdminPanel() {
                               className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="email@exemple.com" />
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-1">Mot de passe *</label>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input type="text" required minLength={6} value={newUserForm.password} onChange={e => setNewUserForm(p => ({ ...p, password: e.target.value }))}
-                              className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Min. 6 caractères" />
+                        {!inviteMode && (
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Mot de passe *</label>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                              <input type="text" required={!inviteMode} minLength={6} value={newUserForm.password} onChange={e => setNewUserForm(p => ({ ...p, password: e.target.value }))}
+                                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" placeholder="Min. 6 caractères" />
+                            </div>
                           </div>
-                        </div>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
@@ -495,9 +527,22 @@ export default function AdminPanel() {
                         </label>
                         {createUserError && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold border border-red-200">{createUserError}</div>}
                         {createUserSuccess && <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-semibold border border-green-200">{createUserSuccess}</div>}
+                        {inviteLink && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                            <p className="text-xs font-semibold text-blue-700">Lien d&apos;invitation (n&apos;expire jamais) :</p>
+                            <div className="flex gap-2">
+                              <input type="text" readOnly value={inviteLink} className="flex-1 px-3 py-2 bg-white border border-blue-200 rounded-lg text-xs text-gray-700 truncate" />
+                              <button type="button" onClick={() => { navigator.clipboard.writeText(inviteLink); }}
+                                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors whitespace-nowrap">
+                                Copier
+                              </button>
+                            </div>
+                            <p className="text-xs text-blue-600">Envoyez ce lien à l&apos;utilisateur pour qu&apos;il crée son mot de passe.</p>
+                          </div>
+                        )}
                         <button type="submit" disabled={creatingUser}
                           className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50">
-                          {creatingUser ? "Création..." : "Créer l'utilisateur"}
+                          {creatingUser ? "Création..." : inviteMode ? "Inviter l'utilisateur" : "Créer l'utilisateur"}
                         </button>
                       </form>
                     </div>
@@ -511,7 +556,7 @@ export default function AdminPanel() {
                       <input type="text" placeholder="Rechercher par email, nom, téléphone, ville..." value={searchUsers} onChange={e => setSearchUsers(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900" />
                     </div>
-                    <button onClick={() => { setShowCreateUser(true); setCreateUserError(""); setCreateUserSuccess(""); }}
+                    <button onClick={() => { setShowCreateUser(true); setCreateUserError(""); setCreateUserSuccess(""); setInviteLink(""); }}
                       className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap">
                       <UserPlus size={18} /> Ajouter un client
                     </button>
