@@ -179,16 +179,30 @@ ${itemsList}
   };
 
   const handleMonCashConfirm = async () => {
-    const msgText = buildMonCashWhatsAppMessage();
-    // Open blank window immediately (user gesture = not blocked by popup blocker)
-    const whatsappWindow = window.open('', '_blank');
-    // Save to DB while browser is still in foreground
-    const saved = await saveAllOrdersToDatabase("moncash");
-    setShowMonCashModal(false);
-    if (saved && whatsappWindow) {
-      whatsappWindow.location.href = `https://wa.me/50932836938?text=${msgText}`;
-    } else if (whatsappWindow) {
-      whatsappWindow.close();
+    setSavingOrders(true);
+    setOrderError(null);
+    try {
+      // 1. Save orders to database first
+      const saved = await saveAllOrdersToDatabase("moncash");
+      if (!saved) return;
+
+      // 2. Convert total to Gourdes for MonCash (MonCash uses HTG)
+      const amountGDS = Math.round(grandTotal * USD_TO_GDS_RATE);
+
+      // 3. Create MonCash payment
+      const res = await fetch("/api/moncash/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: amountGDS, orderId: `ORDER-${Date.now()}` }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.redirectUrl) throw new Error(data.error || "Erreur MonCash");
+
+      // 4. Redirect to MonCash payment page
+      window.location.href = data.redirectUrl;
+    } catch (err: any) {
+      setOrderError(err.message || "Erreur de paiement MonCash. Réessayez.");
+      setSavingOrders(false);
     }
   };
 
@@ -457,22 +471,23 @@ ${itemsList}
 
               {/* Steps */}
               <div className="text-sm space-y-2">
-                <p className="font-bold text-gray-900">Étapes :</p>
+                <p className="font-bold text-gray-900">Comment ça marche :</p>
                 <ol className="list-decimal list-inside text-gray-600 space-y-1">
-                  <li>Envoyez <strong>{formatGourdes(grandTotal)}</strong> au <strong>{MONCASH_NUMBER}</strong></li>
-                  <li>Cliquez le bouton ci-dessous pour confirmer</li>
-                  <li>Envoyez le numéro de transaction sur WhatsApp</li>
+                  <li>Cliquez <strong>"Payer maintenant"</strong></li>
+                  <li>Vous serez redirigé vers MonCash</li>
+                  <li>Entrez votre numéro et PIN MonCash</li>
+                  <li>Paiement confirmé automatiquement !</li>
                 </ol>
               </div>
 
               <button onClick={handleMonCashConfirm} disabled={savingOrders}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow hover:from-green-600 hover:to-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50">
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold shadow hover:from-orange-600 hover:to-red-600 transition flex items-center justify-center gap-2 disabled:opacity-50">
                 {savingOrders ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <MessageCircle size={20} />
+                  <Wallet size={20} />
                 )}
-                J&apos;ai payé - Confirmer
+                Payer maintenant
               </button>
 
               <button onClick={() => setShowMonCashModal(false)} className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-500 font-medium hover:border-gray-300 transition text-sm">
