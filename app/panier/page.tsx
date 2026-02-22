@@ -2,7 +2,7 @@
 
 import { useCart } from '../context/CartContext';
 import Navbar from '@/app/components/Navbar';
-import { ShoppingCart, Trash2, Package, Minus, Plus, LogIn, UserPlus, Wallet, MessageCircle, Copy, CheckCircle, X } from 'lucide-react';
+import { ShoppingCart, Trash2, Package, Minus, Plus, LogIn, UserPlus, Wallet, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -14,17 +14,14 @@ const supabase = createClient(
   { auth: { detectSessionInUrl: false } }
 );
 
-const MONCASH_NUMBER = "39934388";
-
 export default function PanierPage() {
   const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
   const [user, setUser] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [showMonCashModal, setShowMonCashModal] = useState(false);
   const [savingOrders, setSavingOrders] = useState(false);
   const [ordersSaved, setOrdersSaved] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
-  const [copiedMoncash, setCopiedMoncash] = useState(false);
+
 
   useEffect(() => {
     const checkUser = async () => {
@@ -101,81 +98,6 @@ export default function PanierPage() {
     } finally {
       setSavingOrders(false);
     }
-  };
-
-  const buildWhatsAppMessage = () => {
-    const itemsList = cartWithPricing.map((item, i) => {
-      const lines = [`${i + 1}. *${item.name}*`];
-      lines.push(`   Qté: ${item.qty}`);
-      if (item.color) lines.push(`   Couleur: ${item.color}`);
-      if (item.size) lines.push(`   Taille: ${item.size}`);
-      if (item.notes) lines.push(`   Notes: ${item.notes}`);
-      if (item.source) lines.push(`   Source: ${item.source}`);
-      lines.push(`   Prix: *$${item.baseTotal.toFixed(2)}*${isShopItem(item) ? ' (en stock)' : ''}`);
-      if (item.url) lines.push(`   Lien: ${item.url}`);
-      if (item.image && item.image.startsWith('http')) lines.push(`   Image: ${item.image}`);
-      return lines.join('\n');
-    }).join("\n\n");
-
-    return encodeURIComponent(
-`🛒 *NOUVELLE COMMANDE*
-
-👤 *Client:* ${user?.email || "Non connecté"}
-
-📦 *Produits (${cartWithPricing.length}):*
-${itemsList}
-
-💰 *Résumé:*
-• Sous-total: $${grandBaseTotal.toFixed(2)}
-• Frais de service: $${grandFee.toFixed(2)}
-• *TOTAL USD: $${grandTotal.toFixed(2)}*
-• *TOTAL GDS: ${formatGourdes(grandTotal)}*
-_(Taux: 1 USD = ${USD_TO_GDS_RATE} GDS)_
-
-Merci de confirmer ma commande!`
-    );
-  };
-
-  const handleWhatsAppOrder = async () => {
-    const msgText = buildWhatsAppMessage();
-    // Open blank window immediately (user gesture = not blocked by popup blocker)
-    const whatsappWindow = window.open('', '_blank');
-    // Save to DB while browser is still in foreground
-    const saved = await saveAllOrdersToDatabase("whatsapp");
-    if (saved && whatsappWindow) {
-      whatsappWindow.location.href = `https://wa.me/50932836938?text=${msgText}`;
-    } else if (whatsappWindow) {
-      whatsappWindow.close();
-    }
-  };
-
-  const buildMonCashWhatsAppMessage = () => {
-    const itemsList = cartWithPricing.map((item, i) => {
-      const lines = [`${i + 1}. *${item.name}* (×${item.qty})`];
-      if (item.color) lines.push(`   Couleur: ${item.color}`);
-      if (item.size) lines.push(`   Taille: ${item.size}`);
-      if (item.url) lines.push(`   Lien: ${item.url}`);
-      if (item.image && item.image.startsWith('http')) lines.push(`   Image: ${item.image}`);
-      lines.push(`   Prix: $${item.baseTotal.toFixed(2)}`);
-      return lines.join('\n');
-    }).join('\n\n');
-
-    return encodeURIComponent(
-`💳 *PAIEMENT MONCASH EFFECTUÉ*
-
-👤 *Client:* ${user?.email || ""}
-
-📦 *Produits commandés (${cartWithPricing.length}):*
-${itemsList}
-
-💰 *Montant payé:*
-• USD: $${grandTotal.toFixed(2)}
-• GDS: ${formatGourdes(grandTotal)}
-
-📱 *Envoyé au:* ${MONCASH_NUMBER}
-
-⏳ J'attends la confirmation de mon paiement. Merci!`
-    );
   };
 
   const handleMonCashConfirm = async () => {
@@ -431,18 +353,14 @@ ${itemsList}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <button onClick={() => setShowMonCashModal(true)} disabled={savingOrders}
+                  <button onClick={handleMonCashConfirm} disabled={savingOrders}
                     className="w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold shadow hover:from-orange-600 hover:to-red-600 transition flex items-center justify-center gap-2 disabled:opacity-50">
-                    <Wallet size={20} /> Payer avec MonCash
-                  </button>
-                  <button onClick={handleWhatsAppOrder} disabled={savingOrders}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold shadow hover:from-green-600 hover:to-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50">
                     {savingOrders ? (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <MessageCircle size={20} />
+                      <Wallet size={20} />
                     )}
-                    Commander sur WhatsApp
+                    Payer avec MonCash
                   </button>
                 </div>
               )}
@@ -459,68 +377,6 @@ ${itemsList}
           </div>
         )}
       </div>
-
-      {/* MonCash Modal */}
-      {showMonCashModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowMonCashModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            {/* Header */}
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-5 py-3 flex items-center justify-between rounded-t-2xl">
-              <div className="flex items-center gap-2 text-white">
-                <Wallet size={20} />
-                <span className="font-bold">Paiement MonCash</span>
-              </div>
-              <button onClick={() => setShowMonCashModal(false)} className="text-white/80 hover:text-white"><X size={22} /></button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {/* Amount */}
-              <div className="bg-gray-50 rounded-xl p-4 text-center">
-                <p className="text-sm text-gray-500 mb-1">Montant à envoyer</p>
-                <p className="text-3xl font-extrabold text-orange-600">{formatGourdes(grandTotal)}</p>
-                <p className="text-sm text-gray-400">(${grandTotal.toFixed(2)} USD)</p>
-              </div>
-
-              {/* MonCash number */}
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-                <p className="text-xs text-gray-500 mb-2">Numéro MonCash :</p>
-                <div className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5 border border-orange-200">
-                  <span className="text-xl font-bold text-orange-600 tracking-wider">{MONCASH_NUMBER}</span>
-                  <button onClick={() => { navigator.clipboard.writeText(MONCASH_NUMBER); setCopiedMoncash(true); setTimeout(() => setCopiedMoncash(false), 2000); }}
-                    className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-3 py-1.5 rounded-md transition flex items-center gap-1">
-                    {copiedMoncash ? <><CheckCircle size={14} /> Copié</> : <><Copy size={14} /> Copier</>}
-                  </button>
-                </div>
-              </div>
-
-              {/* Steps */}
-              <div className="text-sm space-y-2">
-                <p className="font-bold text-gray-900">Comment ça marche :</p>
-                <ol className="list-decimal list-inside text-gray-600 space-y-1">
-                  <li>Cliquez <strong>"Payer maintenant"</strong></li>
-                  <li>Vous serez redirigé vers MonCash</li>
-                  <li>Entrez votre numéro et PIN MonCash</li>
-                  <li>Paiement confirmé automatiquement !</li>
-                </ol>
-              </div>
-
-              <button onClick={handleMonCashConfirm} disabled={savingOrders}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold shadow hover:from-orange-600 hover:to-red-600 transition flex items-center justify-center gap-2 disabled:opacity-50">
-                {savingOrders ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Wallet size={20} />
-                )}
-                Payer maintenant
-              </button>
-
-              <button onClick={() => setShowMonCashModal(false)} className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-500 font-medium hover:border-gray-300 transition text-sm">
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
