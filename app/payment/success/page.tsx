@@ -1,17 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import Link from "next/link";
 import { CheckCircle, ShoppingBag, Home, Loader2 } from "lucide-react";
 
-export default function MonCashMerciPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const transactionId = searchParams.get("transactionId") || searchParams.get("transaction_id");
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
   useEffect(() => {
-    // Give a moment then show success (the actual verification happens via the alert/notify webhook)
     const timer = setTimeout(() => setStatus("success"), 1500);
     return () => clearTimeout(timer);
   }, []);
@@ -53,5 +52,17 @@ export default function MonCashMerciPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MonCashMerciPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center">
+        <Loader2 size={48} className="text-purple-600 animate-spin" />
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }
