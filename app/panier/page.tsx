@@ -182,11 +182,34 @@ ${itemsList}
     setSavingOrders(true);
     setOrderError(null);
     try {
-      // 1. Save orders to database first
-      const saved = await saveAllOrdersToDatabase("moncash");
-      if (!saved) return;
+      // 1. Store cart data in localStorage for the success page to save later
+      const pendingOrder = {
+        userId: user.id,
+        userEmail: user.email,
+        items: cartWithPricing.map(item => ({
+          name: item.name,
+          url: item.url || "",
+          image: item.image || "",
+          baseTotal: item.baseTotal,
+          price: item.price,
+          qty: item.qty,
+          color: item.color || "",
+          size: item.size || "",
+          notes: item.notes || "",
+          source: item.source || "",
+          isShop: isShopItem(item),
+          serviceFee: (!isShopItem(item) && importSubtotal > 0) ? Math.round((item.baseTotal / importSubtotal) * grandFee * 100) / 100 : 0,
+          totalWithFees: item.baseTotal + ((!isShopItem(item) && importSubtotal > 0) ? Math.round((item.baseTotal / importSubtotal) * grandFee * 100) / 100 : 0),
+          platform: item.source || (isShopItem(item) ? "shop" : "other"),
+        })),
+        grandTotal,
+        grandFee,
+        grandBaseTotal,
+        importSubtotal,
+      };
+      localStorage.setItem("moncash_pending_order", JSON.stringify(pendingOrder));
 
-      // 2. Convert total to Gourdes for MonCash (MonCash uses HTG)
+      // 2. Convert total to Gourdes for MonCash
       const amountGDS = Math.round(grandTotal * USD_TO_GDS_RATE);
 
       // 3. Create MonCash payment
@@ -198,7 +221,8 @@ ${itemsList}
       const data = await res.json();
       if (!res.ok || !data.redirectUrl) throw new Error(data.error || "Erreur MonCash");
 
-      // 4. Redirect to MonCash payment page
+      // 4. Clear cart and redirect to MonCash
+      clearCart();
       window.location.href = data.redirectUrl;
     } catch (err: any) {
       setOrderError(err.message || "Erreur de paiement MonCash. Réessayez.");
