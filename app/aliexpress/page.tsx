@@ -106,19 +106,13 @@ function AliExpressContent() {
     }
   };
 
-  // Shared fetch function for a single page
+  // Shared fetch function for a single page (via our cached server route)
   const fetchAliExpressPage = async (searchTerm: string, page: number): Promise<SearchProduct[] | null> => {
-    const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_search_2?q=${encodeURIComponent(searchTerm)}&page=${page}`, {
-      method: "GET",
-      headers: {
-        "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-        "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
-      },
-    });
+    const response = await fetch(`/api/aliexpress/search?q=${encodeURIComponent(searchTerm)}&page=${page}`);
 
     const data = await response.json();
     
-    if (data.message && data.message.includes("not subscribed")) {
+    if (data.error || (data.message && data.message.includes("not subscribed"))) {
       setError("Erreur API. Veuillez réessayer plus tard.");
       return null;
     }
@@ -208,13 +202,7 @@ function AliExpressContent() {
     setAddedToCart(false);
 
     try {
-      const response = await fetch(`https://aliexpress-datahub.p.rapidapi.com/item_detail_2?itemId=${itemId}`, {
-        method: "GET",
-        headers: {
-          "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? "",
-          "X-RapidAPI-Host": "aliexpress-datahub.p.rapidapi.com",
-        },
-      });
+      const response = await fetch(`/api/aliexpress/detail?itemId=${itemId}`);
 
       const data = await response.json();
       
