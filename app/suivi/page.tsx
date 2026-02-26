@@ -18,11 +18,12 @@ const supabase = createClient(
 
 const TRACKING_STAGES = [
   { key: "awaiting_payment", label: "Paiement", icon: Clock, description: "En attente du paiement" },
+  { key: "payment_confirmed", label: "Confirmé", icon: CheckCircle, description: "Paiement confirmé" },
   { key: "processing", label: "Commande", icon: ShoppingBag, description: "Commande passée sur la plateforme" },
-  { key: "shipped_to_miami", label: "En transit", icon: Plane, description: "Expédié vers Miami, USA" },
+  { key: "shipped_to_usa", label: "En transit", icon: Plane, description: "Expédié vers Miami, USA" },
   { key: "arrived_miami", label: "Miami", icon: Building2, description: "Arrivé à l'entrepôt de Miami" },
-  { key: "shipped_to_haiti", label: "Vers Haïti", icon: Truck, description: "En route vers Haïti" },
-  { key: "arrived_haiti", label: "Haïti", icon: MapPin, description: "Arrivé à Cap-Haïtien" },
+  { key: "shipped_to_dr", label: "Vers Haïti", icon: Truck, description: "En route vers Haïti" },
+  { key: "available_champin", label: "Champin", icon: MapPin, description: "Disponible à Champin, Cap-Haïtien" },
   { key: "delivered", label: "Livré", icon: CheckCircle, description: "Colis livré avec succès" },
 ];
 
@@ -32,12 +33,17 @@ const STATUS_DETAILS: { [key: string]: { title: string; message: string; nextSte
     message: "Votre commande est enregistrée mais le paiement n'a pas encore été confirmé.",
     nextStep: "Une fois le paiement confirmé, nous passerons votre commande immédiatement."
   },
+  payment_confirmed: {
+    title: "Paiement confirmé",
+    message: "Votre paiement a été confirmé. Nous allons passer votre commande.",
+    nextStep: "La commande sera passée sur la plateforme sous peu."
+  },
   processing: {
     title: "Commande en traitement",
     message: "Votre commande a été passée sur la plateforme et est en cours de préparation.",
     nextStep: "Le colis sera expédié vers notre entrepôt à Miami sous peu."
   },
-  shipped_to_miami: {
+  shipped_to_usa: {
     title: "En transit vers Miami",
     message: "Votre colis est en route vers notre entrepôt à Miami, USA (7-20 jours).",
     nextStep: "Vous recevrez une notification dès que le colis arrive à Miami."
@@ -47,13 +53,13 @@ const STATUS_DETAILS: { [key: string]: { title: string; message: string; nextSte
     message: "Votre colis est arrivé à notre entrepôt à Miami. Expédition vers Haïti en préparation.",
     nextStep: "Le prochain envoi vers Haïti est prévu sous 3-5 jours ouvrables."
   },
-  shipped_to_haiti: {
+  shipped_to_dr: {
     title: "En route vers Haïti",
     message: "Votre colis est en cours d'acheminement vers Haïti (3-5 jours).",
     nextStep: "Nous vous contacterons dès que le colis arrive à notre boutique."
   },
-  arrived_haiti: {
-    title: "Disponible à Cap-Haïtien",
+  available_champin: {
+    title: "Disponible à Champin",
     message: "🎉 Votre colis est arrivé à notre boutique à Champin, Cap-Haïtien !",
     nextStep: "Présentez-vous avec votre numéro de suivi ou pièce d'identité."
   },
@@ -61,6 +67,11 @@ const STATUS_DETAILS: { [key: string]: { title: string; message: string; nextSte
     title: "Livré avec succès",
     message: "Votre colis a été livré. Merci d'avoir choisi Up-to-date Electronic Store !",
     nextStep: "N'hésitez pas à nous laisser un avis ou à commander à nouveau."
+  },
+  payment_issue: {
+    title: "Problème de paiement",
+    message: "Votre paiement n'a pas pu être vérifié. Veuillez nous contacter sur WhatsApp.",
+    nextStep: "Contactez-nous pour régulariser votre paiement."
   },
   cancelled: {
     title: "Commande annulée",

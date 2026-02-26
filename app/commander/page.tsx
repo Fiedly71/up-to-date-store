@@ -5,7 +5,7 @@ import Navbar from "@/app/components/Navbar";
 import { useCart } from "@/app/context/CartContext";
 import { getPriceBreakdown, USD_TO_GDS_RATE, formatGourdes } from "@/app/utils/pricing";
 import Link from "next/link";
-import { Link2, ShoppingCart, CheckCircle, Package, Plus, Minus, AlertCircle, ShoppingBag, Globe, ArrowRight, MessageCircle } from "lucide-react";
+import { Link2, ShoppingCart, CheckCircle, Package, Plus, Minus, AlertCircle, ShoppingBag, Globe, ArrowRight, MessageCircle, Trash2 } from "lucide-react";
 
 const PLATFORMS = [
   { value: "aliexpress", label: "AliExpress", color: "bg-red-500 text-white", icon: "🛒" },
@@ -28,73 +28,87 @@ function detectPlatform(url: string): string {
   return "";
 }
 
+interface ProductItem {
+  id: string;
+  url: string;
+  name: string;
+  price: string;
+  quantity: number;
+  color: string;
+  size: string;
+  notes: string;
+}
+
+function newProduct(): ProductItem {
+  return { id: `p-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, url: "", name: "", price: "", quantity: 1, color: "", size: "", notes: "" };
+}
+
 export default function CommanderPage() {
   const { addToCart, cart } = useCart();
-  const [productUrl, setProductUrl] = useState("");
-  const [productName, setProductName] = useState("");
-  const [productPrice, setProductPrice] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const [color, setColor] = useState("");
-  const [size, setSize] = useState("");
-  const [notes, setNotes] = useState("");
+  const [products, setProducts] = useState<ProductItem[]>([newProduct()]);
   const [selectedPlatform, setSelectedPlatform] = useState("");
   const [error, setError] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
-  const priceNum = parseFloat(productPrice) || 0;
-  const totalBase = priceNum * quantity;
+
+  const updateProduct = (id: string, field: keyof ProductItem, value: string | number) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
+  };
+
+  const addProduct = () => {
+    setProducts(prev => [...prev, newProduct()]);
+  };
+
+  const removeProduct = (id: string) => {
+    if (products.length <= 1) return;
+    setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const totalBase = products.reduce((sum, p) => sum + (parseFloat(p.price) || 0) * p.quantity, 0);
   const breakdown = getPriceBreakdown(totalBase);
 
   const handleSubmit = () => {
     setError("");
 
-    if (!productUrl.trim()) {
-      setError("Collez le lien du produit que vous voulez commander.");
-      return;
-    }
-
-    try {
-      new URL(productUrl.trim());
-    } catch {
-      setError("Ce lien n'est pas valide. Copiez le lien complet depuis le site.");
-      return;
-    }
-
-    if (!productName.trim()) {
-      setError("Décrivez le produit (ex: Robe noire taille M, Chaussures Nike 42...)");
-      return;
-    }
-
     if (!selectedPlatform) {
-      setError("Choisissez la plateforme sur laquelle vous avez trouvé le produit.");
+      setError("Choisissez la plateforme sur laquelle vous avez trouvé le(s) produit(s).");
       return;
+    }
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      if (!p.url.trim()) {
+        setError(`Produit ${i + 1}: Collez le lien du produit.`);
+        return;
+      }
+      try { new URL(p.url.trim()); } catch {
+        setError(`Produit ${i + 1}: Le lien n'est pas valide.`);
+        return;
+      }
+      if (!p.name.trim()) {
+        setError(`Produit ${i + 1}: Décrivez le produit.`);
+        return;
+      }
     }
 
     const source = selectedPlatform;
-    const uniqueId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-    addToCart({
-      id: uniqueId,
-      name: productName.trim(),
-      image: "",
-      price: priceNum || undefined,
-      url: productUrl.trim(),
-      color: color.trim(),
-      size: size.trim(),
-      notes: notes.trim(),
-      source,
-    }, quantity);
+    products.forEach(p => {
+      const uniqueId = `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      addToCart({
+        id: uniqueId,
+        name: p.name.trim(),
+        image: "",
+        price: parseFloat(p.price) || undefined,
+        url: p.url.trim(),
+        color: p.color.trim(),
+        size: p.size.trim(),
+        notes: p.notes.trim(),
+        source,
+      }, p.quantity);
+    });
 
     setAddedToCart(true);
-
-    // Reset form after short delay
     setTimeout(() => {
-      setProductUrl("");
-      setProductName("");
-      setProductPrice("");
-      setQuantity(1);
-      setColor("");
-      setSize("");
-      setNotes("");
+      setProducts([newProduct()]);
       setSelectedPlatform("");
     }, 300);
   };
@@ -199,7 +213,7 @@ export default function CommanderPage() {
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">1</span>
-                    Sur quel site avez-vous trouvé le produit ? <span className="text-red-500">*</span>
+                    Sur quel site avez-vous trouvé le(s) produit(s) ? <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 ml-8">
                     {PLATFORMS.map(p => (
@@ -215,137 +229,129 @@ export default function CommanderPage() {
                   </div>
                 </div>
 
-                {/* Step 2: Product link */}
+                {/* Step 2: Products */}
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
                     <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">2</span>
-                    Lien du produit <span className="text-red-500">*</span>
+                    Produit(s) à commander <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-500 mb-2 ml-8">
-                    Copiez le lien complet du produit depuis le site et collez-le ici
-                  </p>
-                  <div className="relative">
-                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="url"
-                      value={productUrl}
-                      onChange={(e) => {
-                        setProductUrl(e.target.value);
-                        setError("");
-                        const detected = detectPlatform(e.target.value);
-                        if (detected) setSelectedPlatform(detected);
-                      }}
-                      placeholder="https://www.shein.com/... ou https://www.temu.com/..."
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700"
-                    />
+
+                  <div className="space-y-4 ml-8">
+                    {products.map((product, idx) => (
+                      <div key={product.id} className="border-2 border-gray-200 rounded-xl p-4 space-y-3 relative bg-gray-50/50">
+                        {/* Product header */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-purple-700">Produit {idx + 1}</span>
+                          {products.length > 1 && (
+                            <button onClick={() => removeProduct(product.id)} className="text-red-400 hover:text-red-600 transition p-1">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Link */}
+                        <div className="relative">
+                          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                          <input
+                            type="url"
+                            value={product.url}
+                            onChange={(e) => {
+                              updateProduct(product.id, "url", e.target.value);
+                              setError("");
+                              const detected = detectPlatform(e.target.value);
+                              if (detected) setSelectedPlatform(detected);
+                            }}
+                            placeholder="Lien du produit *"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
+                          />
+                        </div>
+
+                        {/* Name */}
+                        <input
+                          type="text"
+                          value={product.name}
+                          onChange={(e) => { updateProduct(product.id, "name", e.target.value); setError(""); }}
+                          placeholder="Nom / Description du produit *"
+                          className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
+                        />
+
+                        {/* Price, Color, Size, Quantity row */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={product.price}
+                              onChange={(e) => updateProduct(product.id, "price", e.target.value)}
+                              placeholder="Prix"
+                              className="w-full pl-7 pr-2 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            value={product.color}
+                            onChange={(e) => updateProduct(product.id, "color", e.target.value)}
+                            placeholder="Couleur"
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
+                          />
+                          <input
+                            type="text"
+                            value={product.size}
+                            onChange={(e) => updateProduct(product.id, "size", e.target.value)}
+                            placeholder="Taille"
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
+                          />
+                          <div className="flex items-center gap-1 justify-center">
+                            <button onClick={() => updateProduct(product.id, "quantity", Math.max(1, product.quantity - 1))}
+                              className="w-8 h-8 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-sm">
+                              <Minus size={14} />
+                            </button>
+                            <span className="w-8 text-center font-bold text-sm text-gray-900">{product.quantity}</span>
+                            <button onClick={() => updateProduct(product.id, "quantity", Math.min(99, product.quantity + 1))}
+                              className="w-8 h-8 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 text-sm">
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        <textarea
+                          value={product.notes}
+                          onChange={(e) => updateProduct(product.id, "notes", e.target.value)}
+                          placeholder="Notes (optionnel)"
+                          className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm resize-none"
+                          rows={1}
+                        />
+                      </div>
+                    ))}
+
+                    {/* Add another product */}
+                    <button onClick={addProduct} type="button"
+                      className="w-full py-3 rounded-xl border-2 border-dashed border-purple-300 text-purple-600 font-bold hover:bg-purple-50 transition flex items-center justify-center gap-2 text-sm">
+                      <Plus size={18} />
+                      Ajouter un autre produit
+                    </button>
                   </div>
                 </div>
 
-                {/* Step 3: Description */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">3</span>
-                    Nom / Description du produit <span className="text-red-500">*</span>
-                  </label>
-                  <p className="text-xs text-gray-500 mb-2 ml-8">
-                    Décrivez bien le produit pour qu&apos;on puisse le trouver facilement
-                  </p>
-                  <input
-                    type="text"
-                    value={productName}
-                    onChange={(e) => { setProductName(e.target.value); setError(""); }}
-                    placeholder="Ex: Robe longue noire avec fleurs, Taille L"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700"
-                  />
-                </div>
-
-                {/* Step 4: Details */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold mr-2">4</span>
-                    Détails du produit
-                  </label>
-
-                  <div className="space-y-3 ml-8">
-                    {/* Price */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Prix en dollars USD (si visible sur le site)</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={productPrice}
-                          onChange={(e) => setProductPrice(e.target.value)}
-                          placeholder="0.00"
-                          className="w-full pl-8 pr-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-400 mt-1">Si vous ne connaissez pas le prix, laissez vide. Nous vous le donnerons.</p>
-                    </div>
-
-                    {/* Color & Size */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Couleur</label>
-                        <input
-                          type="text"
-                          value={color}
-                          onChange={(e) => setColor(e.target.value)}
-                          placeholder="Ex: Noir, Rouge..."
-                          className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Taille</label>
-                        <input
-                          type="text"
-                          value={size}
-                          onChange={(e) => setSize(e.target.value)}
-                          placeholder="Ex: M, L, 42..."
-                          className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quantity */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Quantité</label>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="w-9 h-9 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50">
-                          <Minus size={16} />
-                        </button>
-                        <span className="w-12 text-center font-bold text-lg text-gray-900">{quantity}</span>
-                        <button onClick={() => setQuantity(Math.min(99, quantity + 1))}
-                          className="w-9 h-9 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50">
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Notes supplémentaires</label>
-                      <textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Toute information utile : variante spécifique, instructions..."
-                        className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none text-gray-700 text-sm resize-none"
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Price preview (only if price entered) */}
-                {priceNum > 0 && (
-                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 ml-0">
-                    <h4 className="font-bold text-gray-900 text-sm mb-2">💰 Estimation du prix</h4>
+                {/* Price preview */}
+                {totalBase > 0 && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <h4 className="font-bold text-gray-900 text-sm mb-2">💰 Estimation du prix ({products.length} produit{products.length > 1 ? "s" : ""})</h4>
                     <div className="space-y-1 text-sm">
-                      <div className="flex justify-between text-gray-600">
-                        <span>Prix : ${priceNum.toFixed(2)} × {quantity}</span>
+                      {products.map((p, i) => {
+                        const pPrice = (parseFloat(p.price) || 0) * p.quantity;
+                        return pPrice > 0 ? (
+                          <div key={p.id} className="flex justify-between text-gray-600">
+                            <span className="truncate mr-2">{p.name || `Produit ${i + 1}`} (×{p.quantity})</span>
+                            <span className="flex-shrink-0">${pPrice.toFixed(2)}</span>
+                          </div>
+                        ) : null;
+                      })}
+                      <div className="flex justify-between text-gray-600 pt-1 border-t border-purple-200">
+                        <span>Sous-total</span>
                         <span>${totalBase.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-orange-600">
