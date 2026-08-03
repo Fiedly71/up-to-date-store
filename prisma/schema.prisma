@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  CASHIER
+}
+
+enum PaymentMethod {
+  CASH_HTG
+  CASH_USD
+  MONCASH
+  STRIPE_CARD
+}
+
+enum OrderChannel {
+  ONLINE
+  POS
+}
+
+enum OrderStatus {
+  DRAFT
+  RESERVED
+  PROFORMA
+  PAID
+  PARTIALLY_PAID
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentPlan {
+  FULL
+  DEPOSIT_50
+  INSTALLMENT_3
+}
+
+enum BriefKind {
+  FIXED_PACK
+  CUSTOM_QUOTE
+}
+
+model User {
+  id                String    @id @default(cuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  role              Role      @default(CASHIER)
+  active            Boolean   @default(true)
+  // 2FA (TOTP) — secret généré à l'activation, jamais renvoyé au client
+  // après la configuration initiale.
+  twoFactorSecret   String?
+  twoFactorEnabled  Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  orders            Order[]
+  auditLogs         AdminAuditLog[]
+}
+
+// Journal des actions admin sensibles (création/désactivation de compte,
+// changement de prix, annulation de commande, etc.) — utile en cas de
+// litige ou pour savoir qui a fait quoi.
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id])
+  action     String // ex. "product.price_changed", "staff.created"
+  targetType String? // ex. "Product", "User", "Order"
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id             String      @id @default(cuid())
+  name           String
+  sku            String      @unique
+  description    String?
+  price          Int // stored in cents (USD) to avoid float issues
+  compareAtPrice Int?
+  stock          Int         @default(0)
+  lowStockAt     Int         @default(3)
+  images         String[]
+  categoryId     String?
+  category       Category?   @relation(fields: [categoryId], references: [id])
+  variants       Variant[]
+  orderItems     OrderItem[]
+  reviews        Review[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Variant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String // e.g. "Couleur: Noir / 128GB"
+  sku       String  @unique
+  stock     Int     @default(0)
+  priceDiff Int     @default(0) // difference from base price, in cents
+  // Vignette couleur (swatch) affichée sur la fiche produit, et photo
+  // spécifique à la variante (ex. le même téléphone en rouge).
+  colorHex  String?
+  image     String?
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  authorName String
+  rating     Int // 1 à 5
+  comment    String
+  images     String[] // photos jointes par le client (optionnel)
+  approved   Boolean  @default(false) // modération avant affichage publique
+  createdAt  DateTime @default(now())
+}
+
+model Customer {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  name           String
+  phone          String?
+  loyaltyPoints  Int       @default(0)
+  referralCode   String    @unique
+  // Tags libres pour la segmentation email (ex. "vip", "cap-haitien",
+  // "acheteur-smartphone") — remplis manuellement ou automatiquement.
+  tags           String[]
+  createdAt       DateTime @default(now())
+  orders          Order[]
+  loyaltyLedger   LoyaltyTransaction[]
+}
+
+model LoyaltyTransaction {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  points     Int // positif = gagné, négatif = utilisé
+  reason     String // ex. "Achat #A1B2C3D4", "Récompense parrainage"
+  orderId    String?
+  createdAt  DateTime @default(now())
+}
+
+model EmailCampaign {
+  id         String   @id @default(cuid())
+  subject    String
+  body       String
+  tagFilter  String? // envoyé uniquement aux clients ayant ce tag (vide = tous)
+  sentCount  Int      @default(0)
+  sentAt     DateTime @default(now())
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  channel        OrderChannel
+  status         OrderStatus   @default(DRAFT)
+  customerName   String?
+  customerEmail  String?
+  customerPhone  String?
+  customerId     String?
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  paymentMethod  PaymentMethod?
+  paymentPlan    PaymentPlan   @default(FULL)
+  total          Int // cents, montant total de la commande
+  amountPaid     Int           @default(0) // cents, ce qui a déjà été réglé
+  cashierId      String?
+  cashier        User?         @relation(fields: [cashierId], references: [id])
+  items          OrderItem[]
+  installments   OrderInstallment[]
+  // Réservation de stock pendant le paiement Stripe : le stock est décrémenté
+  // à la création de la commande (statut RESERVED) et restauré si le
+  // paiement expire/échoue, pour éviter la survente.
+  reservedUntil  DateTime?
+  // Relance panier abandonné : on garde l'id de la session Stripe pour
+  // pouvoir renvoyer le même lien de paiement dans l'email de relance, et on
+  // note quand la relance a été envoyée pour ne jamais la renvoyer deux fois.
+  stripeSessionId      String?
+  abandonedEmailSentAt DateTime?
+  createdAt      DateTime      @default(now())
+}
+
+// Échéancier du paiement en 3 fois (INSTALLMENT_3). Chaque échéance a son
+// propre montant et sa date d'échéance ; le POS peut les encaisser une à
+// une (voir /[gate]/api/pos/balance, étendu pour gérer plusieurs échéances).
+model OrderInstallment {
+  id        String    @id @default(cuid())
+  orderId   String
+  order     Order     @relation(fields: [orderId], references: [id])
+  index     Int // 1, 2, 3...
+  amount    Int // cents
+  dueDate   DateTime
+  paidAt    DateTime?
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Int // cents, price at time of sale
+}
+
+model ServiceBrief {
+  id          String    @id @default(cuid())
+  kind        BriefKind @default(FIXED_PACK)
+  packName    String
+  fullName    String
+  whatsapp    String
+  email       String
+  company     String?
+  brief       String
+  status      String    @default("NEW")
+  createdAt   DateTime  @default(now())
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String
+  coverImage  String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Testimonial {
+  id         String   @id @default(cuid())
+  authorName String
+  role       String? // ex. "Client depuis 2023", "Créatrice de contenu"
+  quote      String
+  rating     Int      @default(5)
+  approved   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// Anti brute-force persisté en base — fonctionne correctement même sur
+// une plateforme serverless (Vercel) où chaque requête peut tomber sur
+// une instance différente, contrairement à un stockage en mémoire.
+model LoginAttempt {
+  email       String   @id
+  count       Int      @default(0)
+  blockedUntil DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model PromoCode {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Int // pourcentage (1-100) ou montant fixe en cents selon discountType
+  active        Boolean      @default(true)
+  expiresAt     DateTime?
+  usageLimit    Int?
+  usageCount    Int          @default(0)
+  createdAt     DateTime     @default(now())
+}

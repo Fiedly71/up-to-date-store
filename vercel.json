@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-report",
+      "schedule": "59 3 * * *"
+    },
+    {
+      "path": "/api/cron/release-reservations",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-cart",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/backup-email",
+      "schedule": "0 5 * * 0"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+/* Design system interne (POS / Dashboard) — inspiré Fixoria Light */
+.admin-shell {
+  --admin-sidebar-bg: #f8f9fa;
+  --admin-surface: #ffffff;
+  --admin-border: #e9ecef;
+  --admin-text: #1a1a1a;
+  --admin-text-muted: #6c757d;
+  --admin-accent: #2f6f4f; /* vert sobre type Fixoria, distinct du coral public */
+  --admin-radius: 14px;
+}
+
+.admin-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+}
